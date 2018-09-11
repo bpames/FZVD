@@ -1,12 +1,5 @@
 function [DVs,x, its,pen_scal,N,classMeans, gamma]=SZVD_V6(train,D,penalty,tol,maxits,beta,quiet,gamscale)
 
-%Normalize the training data
-get_DVs=1;
-
-
-% st = 0;
-% ntime = 0;
-
 % tic
 classes=train(:,1);
 [n,p]=size(train);
@@ -43,20 +36,27 @@ end
 R=ClassMeans';
 %Find ZVDs 
 N=null(M');
-if (get_DVs==1)
-    %Compute k-1 nontrivial e-vectors of N'*B*N
-    RN = R*N;
-    %size(RN)
-    [~,sigma,w]=svd(RN);
-    %size(w)
-    w=w(:,1);
-    % normalize R.
-    R=R/sigma(1,1);
-    RN = RN/sigma(1,1);
-    
-    % Set gamma.
-    gamma(1)=gamscale*norm(RN*w,2)^2/norm((D*N*w),1);
+
+%Compute leading eigenvector of N'*B*N
+RN = R*N;
+%size(RN)
+[~,sigma,w]=svds(RN, 1,'largest');
+% normalize R.
+R=R/sigma;
+RN = RN/sigma;
+
+% Define d operators.
+if isdiag(D)
+    Dx = @(x) diag(D).*x; % diagonal scaling is D is diagonal.
+    Dtx = @(x) diag(D).*x; 
+else
+    Dx = @(x) D*x;
+    Dtx = @(x) D'*x;
 end
+
+
+% Set gamma.
+gamma(1)=gamscale*norm(RN*w,2)^2/norm(Dx(N*w),1);
 
 % ppt = toc;
 % fprintf('ppt %1.4d \n', ppt)
@@ -71,15 +71,6 @@ end
 DVs=zeros(p,K-1);
 its=zeros(1,K-1);
 %Call ADMM
-
-% Define d operators.
-if isdiag(D)
-    Dx = @(x) diag(D).*x; % diagonal scaling is D is diagonal.
-    Dtx = @(x) diag(D).*x; 
-else
-    Dx = @(x) D*x;
-    Dtx = @(x) D'*x;
-end
 
 for i=1:(K-1)
     %Initial solutions.
@@ -104,9 +95,8 @@ for i=1:(K-1)
         x=x/norm(x);
         N=Nupdate(N,x);
         RN = R*N;
-        [~,sigma,w]=svd(RN);
-        w=w(:,1);
-        R=R/sigma(1,1);
+        [~,sigma,w]=svds(RN, 1, 'largest');
+        R=R/sigma;
         % Set gamma.
         gamma(i+1)=gamscale*norm(RN*w,2)^2/norm((D*N*w),1);
     end
