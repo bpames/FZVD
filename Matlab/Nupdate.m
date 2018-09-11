@@ -1,0 +1,10 @@
+function N1=Nupdate(N,v)
+[m, n] = size(N'*v);
+R = N'*v;
+x = R(n:m,n);  
+e = zeros(length(x),1);
+e(1) = 1;
+x = sign(x(1))*norm(x)*e + x;
+x = x./norm(x);
+N1=N-2*(N*x)*x';
+N1=N1(:, 2:m);
