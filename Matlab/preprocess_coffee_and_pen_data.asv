@@ -1,0 +1,47 @@
+% % Normalize Coffee and Penicillin data.
+
+x = CoffeeTRAIN(:, 2:287);
+[xn, mu, sig] = normalize(x);
+mean(xn)
+std(xn)
+
+xt = normalize_test(CoffeeTEST(:,2:287),mu,sig);
+
+test = [CoffeeTEST(:,1)+1, xt];
+train = [CoffeeTRAIN(:,1)+1, xn];
+
+save('Coffee-normalized.mat', 'train', 'test')
+
+x = CoffeeTRAIN(:, 2:287);
+[xn, mu, sig] = normalize(x);
+mean(xn)
+std(xn)
+
+xt = normalize_test(CoffeeTEST(:,2:287),mu,sig);
+
+test = [CoffeeTEST(:,1)+1, xt];
+train = [CoffeeTRAIN(:,1)+1, xn];
+
+save('Coffee-normalized.mat', 'train', 'test')
+
+%% Preprocess penicillium.
+
+clear;
+load('penicilliumYES.mat')
+
+% Split into train and test.
+trinds = [1:6, 13:18, 25:30]
+Xtr = X([1:6,
+
+%%
+
+[xn, mu, sig] = normalize(X);
+mean(xn)
+std(xn)
+
+xt = normalize_test(CoffeeTEST(:,2:287),mu,sig);
+
+test = [CoffeeTEST(:,1)+1, xt];
+train = [CoffeeTRAIN(:,1)+1, xn];
+
+save('Coffee-normalized.mat', 'train', 'test')
