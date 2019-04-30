@@ -84,7 +84,7 @@ for i=1:length(p)
         
         % Save workspace if desired.
         if(savemat)
-            save('timecompareres.mat')
+            save 'timecompareres.mat' time1 time2 NumErr1 NumErr2 NumFeat1 NumFeat2
         end
     end
 end
