@@ -32,4 +32,17 @@ plot(DVs)
 
 
 %% Call new solver.
+tic
+[DVs1,~,~,~,~,classMeans,gamma] = PenZDA(train,D,penalty,tol,maxits,beta,quiet,gammascale);
+             
+t1 = toc, % Stop timer after training is finished.
+        
+stats1 = test_ZVD_V1(DVs,test,classMeans)
 
+plot(DVs1)
+
+
+%% Check accuracy.
+
+t0 - t1
+norm(DVs - DVs1)
