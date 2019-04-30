@@ -20,10 +20,10 @@ tol.abs= 1e-5;
 maxits=100;
 quiet=0;
 
-D = eye(p);
+D = cov(train(:,2:p+1));
 
 %% Call solver.
-gamscale = 0.8;
+gamscale = 0.3;
 tic;
 pentype = 'ball';
 [DVs,~,~,~,~,classMeans, ~] = PenZDA(train,D,penalty,tol,maxits,beta,quiet, pentype,gamscale);

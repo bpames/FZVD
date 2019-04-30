@@ -47,8 +47,15 @@ RN = RN/sigma;
 
 % Define d operators.
 if isdiag(D)
-    Dx = @(x) diag(D).*x; % diagonal scaling if D is diagonal.
-    Dtx = @(x) diag(D).*x; 
+    % Check if D = I
+    d = diag(D); 
+    if norm(d - ones(p,1)) < 1e-12 % D=I
+        Dx = @(x) x;
+        Dtx = Dx;
+    else % D ~=I
+        Dx = @(x) d.*x; % diagonal scaling if D is diagonal.
+        Dtx = Dx;
+    end
 else
     Dx = @(x) D*x;
     Dtx = @(x) D'*x;
