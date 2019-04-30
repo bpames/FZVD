@@ -1,4 +1,4 @@
-function [DVs,x, its,pen_scal,N,classMeans, gamma]=PenZDA(train,D,penalty,tol,maxits,beta,quiet, consttype,gamscale)
+function [DVs,x, its,pen_scal,N,classMeans, gamma]=PenZDA(train,D,penalty,tol,maxits,beta,quiet, pentype,gamscale)
 
 % tic
 classes=train(:,1);
@@ -78,24 +78,14 @@ for i=1:(K-1)
     sols0.x = w;
     sols0.y = Dx(N*w);
     sols0.z = zeros(p,1);
-    
-    if isequal(consttype,'ball')
-        
-        % Call ball-constrained solver.
+    if pentype == 'ball'
         [x,y,~,its]=SZVD_ADMM_V2(R,N,RN, D,sols0,s,gamma(i),beta,tol,maxits,quiet);
-        
-        % Normalize y, if necessary.
-        DVs(:,i) = y/norm(y);
-    
-    elseif isequal(consttype,'sphere')
-        
-        % Call spherical solver.
-        [x,DVs(:,i),~,its]=SZVD_ADMM_S(R,N,RN, D,sols0,s,gamma(i),beta,tol,maxits,quiet);
-        
-    else % ERROR. 
-        error('Invalid constraint type. Please indicate if using inequality ("ball") or equality ("sphere") constraints.')
+    elseif pentype == 'sphere'
+        [x,y,~,its]=SZVD_ADMM_S(R,N,RN, D,sols0,s,gamma(i),beta,tol,maxits,quiet);
+    else 
+        error('Invalid penalty ty
     end
-    
+    DVs(:,i) = y/norm(y);
     
 %     st = st + toc;
 %     fprintf('solve time %1.4d \n', st)

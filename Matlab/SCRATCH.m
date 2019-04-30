@@ -3,13 +3,15 @@
 %% Load data.
 clc
 clear
-load('OOdata (normalized).mat')
+% load('OOdata (normalized).mat')
+% load('Coffee-normalized.mat')
+load('ECGdata (normalized).mat')
 [n,p] = size(train);
 p = p-1;
 
 %%
 %prepare the data set
-gammascale=0.15;
+gamscale=0.5;
 penalty=0;
 scaling=0;
 beta=2;
@@ -21,25 +23,36 @@ quiet=0;
 D = eye(p);
 
 %% Call solver.
+gamscale = 0.8;
 tic;
-[DVs,~,~,~,~,classMeans,gamma] = SZVD_V6(train,D,penalty,tol,maxits,beta,quiet,gammascale);
+pentype = 'ball';
+[DVs,~,~,~,~,classMeans, ~] = PenZDA(train,D,penalty,tol,maxits,beta,quiet, pentype,gamscale);
              
 t0 = toc, % Stop timer after training is finished.
         
 stats0 = test_ZVD_V1(DVs,test,classMeans)
 
-plot(DVs)
+% [~,K] = size(classMeans);
+% for i = 1:K-1
+%     figure
+%     plot(DVs(:,i))
+% end
+% 
 
-
-%% Call new solver.
+% Call spherical solver.
 tic
-[DVs1,~,~,~,~,classMeans,gamma] = PenZDA(train,D,penalty,tol,maxits,beta,quiet,gammascale);
-             
+pentype = 'sphere';
+[DVs1,~,~,~,~,classMeans,gamma] = PenZDA(train,D,penalty,tol,maxits,beta,quiet, pentype,gamscale);
 t1 = toc, % Stop timer after training is finished.
         
-stats1 = test_ZVD_V1(DVs,test,classMeans)
+stats1 = test_ZVD_V1(DVs1,test,classMeans)
 
-plot(DVs1)
+% Plot DVs.
+[~,K] = size(classMeans);
+for i = 1:K-1
+    figure
+    plot(1:p,DVs1(:,i),  1:p,DVs(:,i) )
+end
 
 
 %% Check accuracy.
