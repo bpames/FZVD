@@ -9,7 +9,7 @@ p = p-1;
 
 %%
 %prepare the data set
-gammascale=0.15;
+gamscale=1.5;
 penalty=0;
 scaling=0;
 beta=2;
@@ -22,24 +22,32 @@ D = eye(p);
 
 %% Call solver.
 tic;
-[DVs,~,~,~,~,classMeans,gamma] = SZVD_V6(train,D,penalty,tol,maxits,beta,quiet,gammascale);
+pentype = 'ball';
+[DVs,~,~,~,~,classMeans, ~] = PenZDA(train,D,penalty,tol,maxits,beta,quiet, pentype,gamscale);
              
 t0 = toc, % Stop timer after training is finished.
         
 stats0 = test_ZVD_V1(DVs,test,classMeans)
 
-plot(DVs)
+for i = 1:3
+    figure
+    plot(DVs(:,i))
+end
 
 
-%% Call new solver.
+%% Call spherical solver.
 tic
-[DVs1,~,~,~,~,classMeans,gamma] = PenZDA(train,D,penalty,tol,maxits,beta,quiet,gammascale);
-             
+gamscale = 1;
+pentype = 'sphere';
+[DVs1,~,~,~,~,classMeans,gamma] = PenZDA(train,D,penalty,tol,maxits,beta,quiet, pentype,gamscale);
 t1 = toc, % Stop timer after training is finished.
         
-stats1 = test_ZVD_V1(DVs,test,classMeans)
+stats1 = test_ZVD_V1(DVs1,test,classMeans)
 
-plot(DVs1)
+for i = 1:3
+    figure
+    plot(DVs1(:,i))
+end
 
 
 %% Check accuracy.
