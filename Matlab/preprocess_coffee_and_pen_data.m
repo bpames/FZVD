@@ -44,7 +44,10 @@ for j=1:n
 end
 
 Xtr = X(trinds,:);
+nzs = any(Xtr,1);
+Xtr = Xtr(:, nzs); % Keep only nonzero predictors.
 Xte = X(testinds,:);
+Xte = Xte(:, nzs); % Keep only nonzero predictors.
 
 labstr = labs(trinds,:);
 labste = labs(testinds,:);

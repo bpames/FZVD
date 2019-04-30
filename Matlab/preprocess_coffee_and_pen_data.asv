@@ -30,18 +30,40 @@ clear;
 load('penicilliumYES.mat')
 
 % Split into train and test.
-trinds = [1:6, 13:18, 25:30]
-Xtr = X([1:6,
+trinds = [1:6, 13:18, 25:30];
+testinds = [7:12, 19:24, 31:36];
 
-%%
+[n,k] = size(Y);
+labs = zeros(n,1);
+for j=1:n
+    for i = 1:k
+        if Y(j,i) == 1
+            labs(j) = i;
+        end
+    end
+end
 
-[xn, mu, sig] = normalize(X);
+Xtr = X(trinds,:);
+Xtr = Xtr(:,any(Xtr,1))
+Xte = X(testinds,:);
+
+labstr = labs(trinds,:);
+labste = labs(testinds,:);
+
+%% Normalize X.
+
+[xn, mu, sig] = normalize(Xtr);
 mean(xn)
 std(xn)
 
-xt = normalize_test(CoffeeTEST(:,2:287),mu,sig);
+xt = normalize_test(Xte,mu,sig);
 
-test = [CoffeeTEST(:,1)+1, xt];
-train = [CoffeeTRAIN(:,1)+1, xn];
 
-save('Coffee-normalized.mat', 'train', 'test')
+%% Copy labels.
+
+
+    
+test = [labste, xt];
+train = [labstr, xn];
+
+save('Pen-normalized.mat', 'train', 'test')
