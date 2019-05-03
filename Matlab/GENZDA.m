@@ -1,4 +1,4 @@
-function [DVs,x, its,N,classMeans, gamma]=PenZDA(train,D, tol,maxits,beta,quiet, consttype,gamscale)
+function [DVs,x, its,N,classMeans, gamma]=GENZDA(train,D, tol,maxits,beta,quiet, Q, pentype, consttype, alpha, gamscale)
 
 % tic
 classes=train(:,1);

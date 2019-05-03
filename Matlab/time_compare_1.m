@@ -1,4 +1,4 @@
-function [time1,time2, NumErr1, NumErr2, NumFeat1, NumFeat2]=time_compare_1(p,r,k,blocksize, N,Ntest, T, savemat)
+function [timeB,timeS, time0,  ErrB, ErrS, Err0, FeatB, FeatS, Feat0]=time_compare_1(p,r,k,blocksize, N,Ntest, T, savemat)
 %p: vector of number of features
 %r: value of constant covariance between features
 %k: number of classes
@@ -10,7 +10,7 @@ function [time1,time2, NumErr1, NumErr2, NumFeat1, NumFeat2]=time_compare_1(p,r,
 %file.
 
 %prepare the data set
-gammascale=0.5;
+gamscale=0.5;
 penalty=0;
 scaling=1;
 beta=3;
@@ -21,13 +21,14 @@ quiet=1;
 
 
 %Initialize matrices for storing results
-time1 = zeros(T, length(p));
-time2=time1;NumErr1=time1;NumErr2=time1;NumFeat1=time1;NumFeat2 = time1;
+timeB = zeros(T, length(p));
+time0=timeB;ErrB=timeB;Err0=timeB;FeatB=timeB;Feat0 = timeB;
+timeS=timeB; ErrS = timeB; FeatS = timeB;
 
 % Set up timing table
-fprintf('+++++++++++++++++++++++++++++++++++\n')
-fprintf('p   | New     | Old \n')
-fprintf('+++++++++++++++++++++++++++++++++++\n')
+fprintf('++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n')
+fprintf('p   \t | Ball \t | Sphere \t | Old \n')
+fprintf('++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n')
 
 for i=1:length(p)
     % Update dictionary matrix.
@@ -42,21 +43,14 @@ for i=1:length(p)
         [train_obs, mu_train, sig_train] = normalize(train(:,2:(p(i)+1)));
         train=[train(:,1), train_obs];
         
-%         train=[train(:,1),normalize(train(:,2:end))];
-%         train_obs=train(:,2:end);
-%         mu_train=mean(train_obs);
-%         sig_train=std(train_obs);
-        
-    %fprintf('new')
-    
-        % Solve using new version and record cpu time.
-        %size(train)
+   
+        % SOLVE USING BALL CONSTRAINED PENZDA.
+        consttype = 'ball';        
         tic;
-        [DVs,~,~,~,~,classMeans,gamma] = SZVD_V6(train,D,penalty,tol,maxits,beta,quiet,gammascale);
+        [DVs,~, ~,~,classMeans, gamma] = PenZDA(train,D, tol,maxits,beta,quiet, consttype,gamscale);
               
-        time1(j, i) =toc; % Stop timer after training is finished.
+        timeB(j, i) =toc; % Stop timer after training is finished.        
         
-        %fprintf('new-test')
         % Sample and normalize test data.
         test = type1_data(p(i),r,k,Ntest(:, i), blocksize(i)); 
         test_obs=test(:,2:(p(i)+1));
@@ -64,27 +58,42 @@ for i=1:length(p)
         test(:, 2:(p(i)+1)) = test_obs ;
         
         % Check classification and feature selection performance.
-        [stats,~,~,~]=test_ZVD_V1(DVs,test,classMeans);
-        NumErr1(j,i)=stats.mc;
-        NumFeat1(j,i)=sum(stats.l0);
+        [stats,~,~,~]=predict(DVs,test,classMeans);
+        ErrB(j,i)=stats.mc;
+        FeatB(j,i)=sum(stats.l0);
+        
+        %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        % SOLVE USING SPHERICALLY CONSTRAINED PROBLEM.
+        %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        
+        consttype = 'sphere';        
+        tic;
+        [DVs,~, ~,~,classMeans, gamma] = PenZDA(train,D, tol,maxits,beta,quiet, consttype,gamscale);              
+        timeS(j, i) =toc; % Stop timer after training is finished.        
+        % Check classification and feature selection performance.
+        [stats,~,~,~]=predict(DVs,test,classMeans);
+        ErrS(j,i)=stats.mc;
+        FeatS(j,i)=sum(stats.l0);
+        
+        
                    
         %Repeat using the old code and save results to remaining matrices.
         tic;
         [DVs2,~,~,~,~,~]=SZVD_01(train,gamma,D,penalty,scaling,tol,maxits,beta,1);
 
-        time2(j, i) =toc;
+        time0(j, i) =toc;
         
         %fprintf('old-test')
-        [stats, ~] = test_ZVD_V1(DVs2,test,classMeans);
-        NumErr2(j,i)=stats.mc;
-        NumFeat2(j,i)=sum(stats.l0);
+        [stats, ~] = predict(DVs2,test,classMeans);
+        Err0(j,i)=stats.mc;
+        Feat0(j,i)=sum(stats.l0);
         
         % Print intermediate stats.
-        fprintf('%4d | %1.4f | %1.4f \n', p(i), time1(j,i), time2(j,i))
+        fprintf('%4d \t | %1.4f \t | %1.4f \t | %1.4f \n', p(i), timeB(j,i), timeS(j,i), time0(j,i))
         
         % Save workspace if desired.
         if(savemat)
-            save 'timecompareres.mat' time1 time2 NumErr1 NumErr2 NumFeat1 NumFeat2
+            save 'timecompareres.mat' timeB timeS time0 ErrB ErrS Err0 FeatB FeatS Feat0
         end
     end
 end
