@@ -92,8 +92,7 @@ for i=1:(K-1)
         
         % Call spherical solver.
         [x,DVs(:,i),~,its]=SZVD_ADMM_S(R,N,RN, D,sols0,gamma(i),beta,tol,maxits,quiet);
-    elseif isequal(consttype, 'unconstrained')
-        [x,DVs(:,i),~,its] = SZVD_ADMM_U(R,N,RN, D,sols0,gamma(i),alpha, beta,pentype, Q, tol,maxits,quiet)
+    elseif isequal(consttype,     
     else % ERROR. 
         error('Invalid constraint type. Please indicate if using inequality ("ball") or equality ("sphere") constraints.')
     end
