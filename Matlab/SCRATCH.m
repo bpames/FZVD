@@ -9,6 +9,11 @@ load('ECGdata (normalized).mat')
 [n,p] = size(train);
 p = p-1;
 
+
+%% Split data.
+
+
+
 %%
 %prepare the data set
 gamscale=0.5;
