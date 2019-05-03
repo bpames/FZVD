@@ -1,4 +1,4 @@
-function [x,y,z,its, errtol] = SZVD_ADMM_S(R, N, RN, D, sols0,pen_scal, gamma, beta, tol, maxits, quiet)
+function [x,y,z,its, errtol] = SZVD_ADMM_S(R, N, RN, D, sols0,gamma, beta, tol, maxits, quiet)
 
 % Iteratively solves the problem
 %       min{-1/2*x'B'x + gamma p(y): l2(y) = 1, DNx = y}
@@ -35,8 +35,15 @@ p = size(D, 1);
 
 % Define d operators.
 if isdiag(D)
-    Dx = @(x) diag(D).*x; % diagonal scaling is D is diagonal.
-    Dtx = @(x) diag(D).*x; 
+    % Check if D = I
+    d = diag(D); 
+    if norm(d - ones(p,1)) < 1e-12 % D=I
+        Dx = @(x) x;
+        Dtx = Dx;
+    else % D ~=I
+        Dx = @(x) d.*x; % diagonal scaling if D is diagonal.
+        Dtx = Dx;
+    end
 else
     Dx = @(x) D*x;
     Dtx = @(x) D'*x;
