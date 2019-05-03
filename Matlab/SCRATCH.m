@@ -30,7 +30,7 @@ pentype = 'ball';
              
 t0 = toc, % Stop timer after training is finished.
         
-stats0 = test_ZVD_V1(DVs,test,classMeans)
+stats0 = predict(DVs,test,classMeans)
 
 % [~,K] = size(classMeans);
 % for i = 1:K-1
@@ -45,7 +45,25 @@ pentype = 'sphere';
 [DVs1,~,~,~,classMeans,gamma] = PenZDA(train,D, tol,maxits,beta,quiet, pentype,gamscale);
 t1 = toc, % Stop timer after training is finished.
         
-stats1 = test_ZVD_V1(DVs1,test,classMeans)
+stats1 = predict(DVs1,test,classMeans)
+
+% Plot DVs.
+[~,K] = size(classMeans);
+for i = 1:K-1
+    figure
+    plot(1:p,DVs1(:,i),  1:p,DVs(:,i) )
+end
+%% Test GENZDA.
+% Call unconstrained solver.
+tic
+pentype = 'diag';
+consttype = 'unconstrained'
+Q = eye(p);
+alpha = 0.25;
+[DVs1,~,~,~,classMeans,gamma] =GENZDA(train,D, tol,maxits,beta,quiet, Q, pentype, consttype, alpha, gamscale);
+t1 = toc, % Stop timer after training is finished.
+        
+stats1 = predict(DVs1,test,classMeans)
 
 % Plot DVs.
 [~,K] = size(classMeans);

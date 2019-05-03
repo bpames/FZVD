@@ -63,7 +63,8 @@ end
 
 
 % Set gamma.
-gamma(1)=gamscale*norm(RN*w,2)^2/norm(Dx(N*w),1);
+Nw = N*w;
+gamma(1)=gamscale*norm(RN*w,2)^2/(alpha*norm(Dx(N),1) + (1-alpha)*Nw'*Q*Nw) ;
 
 % ppt = toc;
 % fprintf('ppt %1.4d \n', ppt)
@@ -93,7 +94,7 @@ for i=1:(K-1)
         % Call spherical solver.
         [x,DVs(:,i),~,its]=SZVD_ADMM_S(R,N,RN, D,sols0,gamma(i),beta,tol,maxits,quiet);
     elseif isequal(consttype, 'unconstrained')
-        [x,DVs(:,i),~,its] = SZVD_ADMM_U(R,N,RN, D,sols0,gamma(i),alpha, beta,pentype, Q, tol,maxits,quiet)
+        [x,DVs(:,i),~,its] = SZVD_ADMM_U(R,N,RN, D,sols0,gamma(i),alpha, beta,pentype, Q, tol,maxits,quiet);
     else % ERROR. 
         error('Invalid constraint type. Please indicate if using inequality ("ball") or equality ("sphere") constraints.')
     end
