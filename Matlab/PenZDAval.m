@@ -84,7 +84,7 @@ end
 %Initialize the validation scores
 %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 num_gammas = length(gmults);
-val_score=zeros(num_gammas,1);
+val_score= (p+1)*ones(num_gammas,1);
 %mc_ind=1;
 %l0_ind=1;
 best_ind=1;
@@ -175,7 +175,7 @@ for i=1:num_gammas
     
     %If gamma gives trivial sol, give it a large penalty
     if (min(stats.l0)<3)
-        val_score(i)=100*size(val,1);
+        val_score(i)=(p+1)*size(val,1);
         triv=1;
     else
         if (sum(stats.l0)>sparsity_level*(K-1)*p)

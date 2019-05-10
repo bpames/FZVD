@@ -26,8 +26,9 @@ maxits= 1000;
 quiet=false;
 
 consttype = 'ball';
+consttype = 'sphere';
 
-sparsity_level = 0.35;
+sparsity_level = 0.25;
 
 D = eye(p);
 
@@ -46,11 +47,12 @@ end
 
 %% Try cross-validation.
 
-nfolds = n;
-[bestDVs, bestind, bestgamma,  cv_scores, classMeans] = PenZDAcv(train, nfolds, D, gmults, consttype, sparsity_level, beta, tol, maxits,quiet);
+nfolds = 10;
+[bestDVs, bestind, inds, bestgamma,  cv_scores, classMeans] = PenZDAcv(train, nfolds, D, gmults, consttype, sparsity_level, beta, tol, maxits,quiet);
 
 bestind
 bestgamma
+cv_scores
 cvstats = predict(bestDVs, test, classMeans)
 
 % Plot DVs.
