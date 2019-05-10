@@ -39,18 +39,23 @@ tratio = 1- nfolds/n;
 % CV scheme.
 %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+if (quiet == false)
+    fprintf('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n')
+    fprintf('Leave-One-Out CV\n')
+end
+
 for f = 1:nfolds
     
     %=============================================================
     % Split data.
     %=============================================================
     
-    if (nfolds == n) % Leave-one-out CV.
+    if (nfolds == n) % Leave-one-out CV.        
         % Leave out f-th observation as validation observation.        
-        trainf = train(~f,:);
+        trainf = train; trainf(f,:) = [];
         valf = train(f,:);
-        size(trainf)
-        size(valf)
+%         size(trainf)
+%         size(valf)
     elseif (nfolds > n) % error.
         error('number of folds cannot exceed number of training observations.')
     else % use nfolds/n observations for validation.              
@@ -89,7 +94,9 @@ end
 meanscores = mean(cv_scores,2); %size(meanscores)
 
 % Find position of best score.
-[~,bestind] = min(meanscores);
+[bestscore,~] = min(meanscores);
+inds = find(meanscores == bestscore);
+bestind = max(inds);
 
 %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 % Solve for discriminant vectors using the full training set and best

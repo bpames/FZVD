@@ -1,4 +1,4 @@
-function [bestDVs, bestind, bestgamma,  cv_scores] = PenZDAcv(train, D, gmults, consttype, sparsity_level, beta, tol, maxits,quiet)
+function [bestDVs, bestind, bestgamma,  cv_scores, classMeans] = PenZDAcv(train, nfolds, D, gmults, consttype, sparsity_level, beta, tol, maxits,quiet)
 %PENZDACV cross-validation for choice of parameters in PenZDA.
 %
 % INPUT.
@@ -29,15 +29,19 @@ ngam = length(gmults);
 % Array of cross-validation scores.
 cv_scores = zeros(ngam, nfolds);
 
-% Set training ratio. (Ignored if nfolds = n for LOO).)
-tratio = 1- nfolds/n;
-
 % number and dimension of training observations.
 [n,p] = size(train); p = p - 1;
+
+% Set training ratio. (Ignored if nfolds = n for LOO).)
+tratio = 1- nfolds/n;
 
 %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 % CV scheme.
 %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+if qu
+fprintf('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n')
+fprintf('Leave-One-Out CV\n')
 
 for f = 1:nfolds
     
@@ -45,14 +49,14 @@ for f = 1:nfolds
     % Split data.
     %=============================================================
     
-    if (nfolds == n) % Leave-one-out CV.
+    if (nfolds == n) % Leave-one-out CV.        
         % Leave out f-th observation as validation observation.        
-        trainf = train(~f,:);
+        trainf = train; trainf(f,:) = [];
         valf = train(f,:);
-        size(trainf)
-        size(valf)
+%         size(trainf)
+%         size(valf)
     elseif (nfolds > n) % error.
-        error('number of folds cannot exceed number of training observations').
+        error('number of folds cannot exceed number of training observations.')
     else % use nfolds/n observations for validation.              
        % Split training set into training data and validation data.
        [trainf, valf] = train_test_split(train, tratio);              
@@ -62,12 +66,9 @@ for f = 1:nfolds
     xf = trainf(:, 2:(p+1));
     [xnf, muf, sigf] = normalize(xf);
     trainf(:, 2:(p+1)) = xnf;
-    mean(mean(xnf))
-    mean(std(xnf))
     
     % "Normalize" validation data.
-    xv = normalize_test(valf(:,2:(p+1),muf,sigf);
-    valf(:,2:(p+1)) = xv;
+    valf(:,2:(p+1)) = normalize_test(valf(:,2:(p+1)),muf,sigf);
 
     %=============================================================
     % Calculate validation scores for this fold.
@@ -75,12 +76,11 @@ for f = 1:nfolds
     % Display fold number.
     if (quiet == false)
         fprintf('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n')
-        fprintf('Fold %3d\n', f)
-        fprintf('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n')
+        fprintf('Fold %3d\n', f)        
     end
     
     % Call PenZDAval.
-    [~, ~, ~, ~, cv_scores(:, f),~] = PenZDAval(trainf, valf,D, gmults, consttype, sparsity_level, beta, tol, maxits,quiet);    
+    [~, ~, ~, ~, cv_scores(:, f), ~] = PenZDAval(trainf, valf,D, gmults, consttype, sparsity_level, beta, tol, maxits,quiet);    
 
 
 end
@@ -90,8 +90,15 @@ end
 %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 % Calculate average classification scores.
-meanscores = mean(cv_scores,1); size(meanscores)
+meanscores = mean(cv_scores,2); %size(meanscores)
 
+% Find position of best score.
 [~,bestind] = min(meanscores);
 
+%++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% Solve for discriminant vectors using the full training set and best
+% parameters.
+%++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+gamscale = gmults(bestind);
+[bestDVs,~, ~,~,classMeans, bestgamma] = PenZDA(train,D, tol,maxits,beta,1, consttype, gamscale);
 

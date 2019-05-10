@@ -11,7 +11,7 @@ p = p-1;
 
 
 %% Split testing data as validation and testing set.
-valratio = 0.5; % Extract this fraction for validation set.
+valratio = 0.35; % Extract this fraction for validation set.
 [val, test] = train_test_split(test, valratio);
 
 
@@ -25,9 +25,9 @@ tol.abs= 1e-3;
 maxits= 1000;
 quiet=false;
 
-consttype = 'sphere';
+consttype = 'ball';
 
-sparsity_level = 0.5;
+sparsity_level = 0.35;
 
 D = eye(p);
 
