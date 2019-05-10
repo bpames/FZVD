@@ -68,14 +68,22 @@ for i=1:length(p)
         
         consttype = 'sphere';        
         tic;
-        [DVs,~, ~,~,classMeans, gamma] = PenZDA(train,D, tol,maxits,beta,quiet, consttype,gamscale);              
+        [DVs,~, ~,~,classMeans,~] = PenZDA(train,D, tol,maxits,beta,quiet, consttype,gamscale);              
         timeS(j, i) =toc; % Stop timer after training is finished.        
         % Check classification and feature selection performance.
         [stats,~,~,~]=predict(DVs,test,classMeans);
         ErrS(j,i)=stats.mc;
         FeatS(j,i)=sum(stats.l0);
         
+        %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        % SOLVE USING SDAD or SDAAP.
+        %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        % Calculate gamma/lambda.
+        % Edit timing, err, feat storage/reporting.
         
+        %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        % SOLVE USING OLD CODE.
+        %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                    
         %Repeat using the old code and save results to remaining matrices.
         tic;

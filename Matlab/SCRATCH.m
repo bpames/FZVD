@@ -62,7 +62,31 @@ for i = 1:K-1
     plot(1:p, bestDVs(:,i))
 end
 
+%% Call ASDA.
 
+% Make Y.
+[nt, p] = size(train);
+Xt = train(:, 2:p);
+p = p-1;
+
+labs = train(:,1);
+Yt = zeros(nt, max(labs));
+for i = 1:nt
+    Yt(i, labs(i)) = 1;
+end
+
+%% 
+Om = eye(p);
+gam = 0.1;
+lam = 0.15; % What is a better choice?
+q = 1;
+PGsteps = 500;
+PGtol = 1e-3;
+maxits = 500;
+tol = 1e-3;
+
+[B,Q] = SDAAP(Xt, Yt, Om, gam, lam, q, PGsteps, PGtol, maxits, tol);
+ASDAstats = predict(B, test, classMeans)
 
 
 %% Call solver.
