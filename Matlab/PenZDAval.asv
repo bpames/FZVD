@@ -11,6 +11,12 @@ function [val_w, DVs, gamma,gammas, best_ind, its, w, scaler, val_score, classMe
 % tol: stopping tolerances
 % maxits: maximum number of iterations.
 % quiet = true suppresses display of intermediate outputs.
+% OUTPUT.
+% val_w: discriminant vectors corresponding to best parameter.
+% DVs: set of all discriminant vectors.
+% gamma: best parameter choice.
+% gammas: all parameters tested.
+% best_ind: position of b
 
 % Initialize classMeans of training data and get number of classes.
 classes=train(:,1);
@@ -23,7 +29,7 @@ K=length(labels);
 %Initiate matrix of within-class means
 p=p-1;
 classMeans=zeros(p,K);
-ClassMeans=zeros(p,K);
+R=zeros(p,K);
 
 %for each class, make an object in the list containing only the obs of that
 %class and update the between and within-class sample
@@ -40,11 +46,11 @@ for i=1:K
     %Update W 
     xj=class_obs-ones(ni,1)*classMeans(:,i)';
     M(:,classes == labels(i)) =xj';
-    ClassMeans(:,i)=mean(class_obs)*sqrt(ni);
+    R(:,i)=mean(class_obs)*sqrt(ni);
 end
 
 % Calculate R and N.
-R=ClassMeans';
+R=R';
 %Find ZVDs 
 N=null(M');
 
@@ -171,7 +177,7 @@ for i=1:num_gammas
         val_score(i)=100*size(val,1);
         triv=1;
     else
-% %         if (sum(stats.l0)>sparsity_level*(K-1)*p)
+        if (sum(stats.l0)>sparsity_level*(K-1)*p)
             val_score(i)=sum(stats.l0);
         else
             val_score(i)=stats.mc;

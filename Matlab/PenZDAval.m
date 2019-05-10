@@ -1,4 +1,4 @@
-function [val_w, DVs, gamma,gammas, best_ind, its, w, scaler, val_score, classMeans] = PenZDAval(train, val,D, gmults, consttype, sparsity_level, beta, tol, maxits,quiet)
+function [val_w, DVs, gamma, best_ind, val_score, classMeans] = PenZDAval(train, val,D, gmults, consttype, sparsity_level, beta, tol, maxits,quiet)
 % PENZDAVAL performs validation to train regularization parameters and DVs.
 %
 % INPUT.
@@ -11,6 +11,13 @@ function [val_w, DVs, gamma,gammas, best_ind, its, w, scaler, val_score, classMe
 % tol: stopping tolerances
 % maxits: maximum number of iterations.
 % quiet = true suppresses display of intermediate outputs.
+% OUTPUT.
+% val_w: discriminant vectors corresponding to best parameter.
+% DVs: set of all discriminant vectors.
+% gamma: best parameter choice.
+% best_ind: position of best gamma.
+% val_score: array of validation scores.
+% classMeans: set of training data class means.
 
 % Initialize classMeans of training data and get number of classes.
 classes=train(:,1);
