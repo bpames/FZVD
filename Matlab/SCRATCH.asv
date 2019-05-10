@@ -10,32 +10,25 @@ load('ECGdata (normalized).mat')
 p = p-1;
 
 
-%% Split testing data as validation and testing set.
-valratio = 0.05; % Extract this fraction for validation set.
-[val, test] = train_test_split(test, valratio);
+%% Split data.
+train = train;
+
+
 
 
 
 %%
 %prepare the data set
-gmults = linspace(0, 1.5, 15);
+gamscale=0.5;
 beta=2;
 tol.rel = 1e-5;
 tol.abs= 1e-5;
 maxits=100;
-quiet=false;
+quiet=0;
 
-consttype = 'sphere';
-
-sparsity_level = 0.3;
 
 D = eye(p);
 
-%% Call validation set.
-[val_w, DVs, gamma,gammas, its, w, scaler, val_score, classMeans] = PenZDAval(train, val,D, gmults, consttype, sparsity_level, beta, tol, maxits,quiet);
-gamma
-
-stats = predict(val_w, test, classMeans)
 
 %% Call solver.
 gamscale = 0.3;

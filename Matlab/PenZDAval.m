@@ -1,11 +1,18 @@
-function [val_w, DVs, gamma,gammas, its, w, scaler, val_score, classMeans] = PenZDVval(train, val,D,num_gammas,gmults, sparsity_level, beta, tol, maxits,quiet)
-%Atrain: training data
-%D: Penalty dictionary basis matrix
-%Aval: validation set
-%k: #of classes within the training and validation sets
-%num_gammas: number of gammas to train on
-%g_mults:(c_min, c_max): parameters defining range of gammas to train g_max*(c_min, c_max)
+function [val_w, DVs, gamma,gammas, its, w, scaler, val_score, classMeans] = PenZDAval(train, val,D, gmults, consttype, sparsity_level, beta, tol, maxits,quiet)
+% PENZDAVAL performs validation to train regularization parameters and DVs.
+%
+% INPUT.
+% train, val: training and validation set.
+% D: Penalty dictionary basis matrix 
+% gmults: list of multipliers of maximum gamma (calculated later) to compare.
+% consttype: "ball/sphere" imposes ball/spherical constraint on DVs.
+% sparsity_level: desired minimum sparsity level for validation scoring.
+% beta: augmented Lagrangian penalty parameter.
+% tol: stopping tolerances
+% maxits: maximum number of iterations.
+% quiet = true suppresses display of intermediate outputs.
 
+% Initialize classMeans of training data and get number of classes.
 classes=train(:,1);
 [n,p]=size(train);
 X=train(:,2:p);
@@ -22,6 +29,8 @@ ClassMeans=zeros(p,K);
 %class and update the between and within-class sample
 M=zeros(p,n);
 
+
+% Calculate scaled classMeans for calculating R and N in objective function.
 for i=1:K    
     class_obs=X(classes==labels(i),:);
     %Get the number of obs in that class (the number of rows)
@@ -34,7 +43,7 @@ for i=1:K
     ClassMeans(:,i)=mean(class_obs)*sqrt(ni);
 end
 
-%Symmetrize W and B
+% Calculate R and N.
 R=ClassMeans';
 %Find ZVDs 
 N=null(M');
@@ -66,6 +75,7 @@ end
 %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 %Initialize the validation scores
 %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+num_gammas = length(gmults);
 val_score=zeros(num_gammas,1);
 %mc_ind=1;
 %l0_ind=1;
@@ -77,23 +87,23 @@ triv=0;
 %Initialize DVs and iterations
 N0=N;
 DVs=zeros(p,K-1,num_gammas);
-its=zeros(K-1,num_gammas);
+its=zeros(num_gammas,1);
 
 %For each gamma, calculate ZVDs and corresponding validation score
-gammas=zeros(num_gammas,K-1);
+gammas=zeros(num_gammas, K-1);
 
 %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-% Cross-validation.
+% Validation step.
 %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 % Set initial gamma.
-gammas(:,1)=gamscale*norm(RN*w,2)^2/norm(Dx(N*w),1);
+%gammas(:,1)=gamscale*norm(RN*w,2)^2/norm(Dx(N*w),1);
 
 for i=1:num_gammas
     N=N0;
     %R=R0;
     
     % Set gamma_1.
-    gammas(i,1) = gmult(i)*norm(RN*w,2)^2/norm(Dx(N*w,1)); 
+    gammas(i,1) = gmults(i)*norm(RN*w,2)^2/norm(Dx(N*w), 1); 
     
     for j=1:K-1
         
@@ -114,7 +124,7 @@ for i=1:num_gammas
         if isequal(consttype,'ball')
             
             % Call ball-constrained solver.
-            [~,y,~,its]=SZVD_ADMM_V2(R,N,RN, D,sols0,gammas(i,j),beta,tol,maxits,quietADMM);
+            [~,y,~,tmpits]=SZVD_ADMM_V2(R,N,RN, D,sols0,gammas(i,j),beta,tol,maxits,quietADMM);
             
             % Normalize y, if necessary.
             DVs(:,j,i) = y/norm(y);
@@ -128,7 +138,7 @@ for i=1:num_gammas
             error('Invalid constraint type. Please indicate if using inequality ("ball") or equality ("sphere") constraints.')
         end
           
-        its(j,i)=tmpits;
+        its(i)= its(i) + tmpits;
         %Update N and B 
         if j< K-1
             %Project N onto orthogonal complement of Nx 
@@ -144,9 +154,8 @@ for i=1:num_gammas
     end
     %Get performance scores on the validation set
     %Call test ZVD to get predictions
-    [stats,~,proj,cent]=predict(DVs(:,:,i), val, classMeans);%%%%%%%%%%%%%
-    proj;
-    cent;
+    [stats,~,~,~]=predict(DVs(:,:,i), val, classMeans);%%%%%%%%%%%%%
+    
     %If gamma gives trivial sol, give it a large penalty
     if (sum(stats.l0)<3)
         val_score(i)=100*size(val,1);
@@ -175,15 +184,26 @@ for i=1:num_gammas
     %    min_mc=stats.mc;
     %end
     %Terminate if a trivial solution has been found
-    if (quiet==0)
-       fprintf('it = %g, val_score= %g, mc=%g, l0=%g, its=%g \n', i, val_scores(i), stats.mc, sum(stats.l0), mean(its(:,i)));
+    if (quiet==false)
+       if (i==1) 
+           fprintf('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n')
+           fprintf('i \t\t + gam \t\t\t + score \t\t + mc \t\t\t + l0 \t + its \n')
+           fprintf('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n')
+       end
+       fprintf('%3d \t +  %1.2e \t + %1.2e \t + %1.2e \t + %1.2d \t + %1.2d \n', i, gammas(i), val_score(i),  stats.mc, sum(stats.l0), its(i));
     end
     if(triv==1)
         break;
     end
 end
+
+
 %Export DVs found using validation
 val_w=DVs(:,:,best_ind);
 gamma=gammas(best_ind,:);
 scaler=gmults(best_ind);
 val_score=val_score(best_ind);
+
+
+
+
