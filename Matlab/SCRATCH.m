@@ -32,8 +32,8 @@ sparsity_level = 0.5;
 D = eye(p);
 
 %% Call validation set.
-[val_w, DVs, gamma,gammas, ind, its, w, scaler, val_score, classMeans] = PenZDAval(train, val,D, gmults, consttype, sparsity_level, beta, tol, maxits,quiet);
-gamma, ind
+[val_w, DVs, gamma, best_ind, val_score, classMeans] = PenZDAval(train, val,D, gmults, consttype, sparsity_level, beta, tol, maxits,quiet);
+gamma, best_ind
 
 stats = predict(val_w, test, classMeans)
 
@@ -46,10 +46,11 @@ end
 
 %% Try cross-validation.
 
-nfolds = 5;
+nfolds = n;
 [bestDVs, bestind, bestgamma,  cv_scores, classMeans] = PenZDAcv(train, nfolds, D, gmults, consttype, sparsity_level, beta, tol, maxits,quiet);
 
-
+bestind
+bestgamma
 cvstats = predict(bestDVs, test, classMeans)
 
 % Plot DVs.

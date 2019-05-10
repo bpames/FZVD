@@ -86,7 +86,7 @@ end
 %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 % Calculate average classification scores.
-meanscores = mean(cv_scores,1); size(meanscores)
+meanscores = mean(cv_scores,2); %size(meanscores)
 
 % Find position of best score.
 [~,bestind] = min(meanscores);

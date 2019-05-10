@@ -218,8 +218,8 @@ end
 %Export DVs found using validation
 val_w=DVs(:,:,best_ind);
 gamma=gammas(best_ind,:);
-scaler=gmults(best_ind);
-val_score=val_score(best_ind);
+%scaler=gmults(best_ind);
+%val_score=val_score(best_ind);
 
 
 
