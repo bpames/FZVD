@@ -3,9 +3,9 @@
 %% Load data.
 clc
 clear
- load('OOdata (normalized).mat')
+% load('OOdata (normalized).mat')
 %load('Coffee-normalized.mat')
-% load('ECGdata (normalized).mat')
+ load('ECGdata (normalized).mat')
 [n,p] = size(train);
 p = p-1;
 
@@ -22,7 +22,7 @@ gmults = linspace(0, 1.5, 15);
 beta=2;
 tol.rel = 1e-3;
 tol.abs= 1e-3;
-maxits= 500;
+maxits= 1000;
 quiet=false;
 
 consttype = 'sphere';
@@ -43,6 +43,24 @@ for i = 1:K-1
     figure
     plot(1:p, val_w(:,i))
 end
+
+%% Try cross-validation.
+
+nfolds = 5;
+[bestDVs, bestind, bestgamma,  cv_scores, classMeans] = PenZDAcv(train, nfolds, D, gmults, consttype, sparsity_level, beta, tol, maxits,quiet);
+
+
+cvstats = predict(bestDVs, test, classMeans)
+
+% Plot DVs.
+[~,K] = size(classMeans);
+for i = 1:K-1
+    figure
+    plot(1:p, bestDVs(:,i))
+end
+
+
+
 
 %% Call solver.
 gamscale = 0.3;
