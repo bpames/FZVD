@@ -116,7 +116,7 @@ for i=1:(K-1)
         [~,sigma,w]=svds(RN, 1, 'largest');
         R=R/sigma;
         % Set gamma.
-        gamma(i+1)=gamscale*norm(RN*w,2)^2/norm((D*N*w),1);
+        gamma(i+1)=gamscale*norm(RN*w,2)^2/norm(Dx(N*w),1);
     end
 %     ntime = ntime + toc;
 %     fprintf('Nt %1.4d \n', ntime)
