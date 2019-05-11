@@ -99,7 +99,7 @@ for i=1:length(p)
         tmp = rand(p(i));
         Om = D + 1e-2*(tmp*tmp');
         gam = 0.1;
-        lam = 0.15; % What is a better choice?
+        %lam = 0.15; % What is a better choice?
         q = k-1;
         PGsteps = 500;
         PGtol = 1e-3;
@@ -109,7 +109,62 @@ for i=1:length(p)
         % Call ASDA-APG.
         tic
         % Add classMeans calculation.
+        classes=train(:,1);
+        [nt,pt]=size(train);
+        X=train(:,2:pt);
+        %X=normalize(X);
+        %Extract observations
+        labels=unique(classes);
+        K=length(labels);
+        %Initiate matrix of within-class means
+        pt=pt-1;
+        classMeans=zeros(pt,K);
+        ClassMeans=zeros(pt,K);
+        
+        % Initialize gamma.
+        gamma = zeros(K-1,1);
+        
+        %for each class, make an object in the list containing only the obs of that
+        %class and update the between and within-class sample
+        M=zeros(pt,nt);
+        
+        for ii=1:K
+            class_obs=X(classes==labels(ii),:);
+            %Get the number of obs in that class (the number of rows)
+            ni=size(class_obs,1);
+            %Compute within-class mean
+            classMeans(:,ii)=mean(class_obs);
+            %Update W
+            xj=class_obs-ones(ni,1)*classMeans(:,ii)';
+            M(:,classes == labels(ii)) =xj';
+            ClassMeans(:,ii)=mean(class_obs)*sqrt(ni);
+        end
+    
         % Add lambda calculation.
+        A = 2*(Xt'*Xt + gam*Om);
+        % Precompute Mj = I - Qj*Qj'*D.
+        Qj = ones(K, 1);
+        Di = 1/nt*(Yt'*Yt);
+        Mj = @(u) u - Qj*(Qj'*(Di*u));
+        
+        % Initialize theta.
+        theta = Mj(rand(K,1));
+        theta = theta/sqrt(theta'*Di*theta);
+        
+        %%
+        % Form d.
+        d = 2*Xt'*Yt*theta/nt;
+        
+        % Initialize beta.
+        beta = A\d; % 1st unpenalized solution.
+        
+        % Choose lambda so that unpenalized solution always has negative value.
+        lmax = (beta'*d - 0.5*beta'*A*beta)/norm(beta, 1);
+        
+        % Set lambda.
+        lam = gamscale*lmax;
+
+        % Call SDAAP.
         [DVs,~] = SDAAP(Xt, Yt, Om, gam, lam, q, PGsteps, PGtol, maxits, ASDAtol);
         times(j,i,meth) = toc;
         [stats,~,~,~]=predict(DVs,test,classMeans);
@@ -124,6 +179,7 @@ for i=1:length(p)
         % SOLVE USING OLD CODE.
         %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         meth = meth + 1;
+        beta = 3;
         %Repeat using the old code and save results to remaining matrices.
         tic;
         [DVs2,~,~,~,~,~]=SZVD_01(train,gamma,D,penalty,scaling,tol,maxits,beta,1);
