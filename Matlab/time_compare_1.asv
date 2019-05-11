@@ -1,4 +1,4 @@
-function [times, errs, feats]=time_compare_1(p,r,k,blocksize, N,Ntest, T, savemat)
+function [timeB,timeS, time0,  errs, ErrS, Err0, feats, feats, Feat0]=time_compare_1(p,r,k,blocksize, N,Ntest, T, savemat)
 %p: vector of number of features
 %r: value of constant covariance between features
 %k: number of classes
@@ -103,11 +103,11 @@ for i=1:length(p)
         feats(j,i, meth)=sum(stats.l0);
         
         % Print intermediate stats.
-        fprintf('%4d \t | %1.3f \t | %1.3f \t | %1.3f \t | %1.3f \n', p(i), times(j,i, 1), times(j,i, 2), times(j,i, 3), times(j,i, 4))
+        fprintf('%4d \t | %1.4f \t | %1.4f \t | %1.4f \n', p(i), times(j,i, 1), times(j,i, 1), times(j,i, 1), times(j,i, 4))
         
         % Save workspace if desired.
         if(savemat)
-            save 'timecompareres.mat' times errs feats
+            save 'timecompareres.mat' timeB timeS time0 errs ErrS Err0 feats feats Feat0
         end
     end
 end

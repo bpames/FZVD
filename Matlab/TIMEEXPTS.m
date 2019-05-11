@@ -5,20 +5,25 @@ k = 4;
 %p = 25*2.^(0:8);
 %p = [50:50:500 , 600:100:1000, 1250: 250:2500, 3000:500:4000];
 
-p = [50:50:1000];%, 600:100:1000, 1250: 250:2500, 3000:500:5000];
+p = [50:50:250];%, 600:100:1000, 1250: 250:2500, 3000:500:5000];
 N = 10*ones(k,length(p));
 blocksize = ceil(p/(2*k));
 Ntest = 500*ones(k, length(p));
-T = 10;
+T = 3;
 savemat = true;
 r = 0.5;
 
 %% Run experiment.
-[time1,time2,time3, err1, err2, err3, feat1, feat2, feat3]=time_compare_1(p,r,k,blocksize, N,Ntest, T, savemat);
-
+[times, errs, feats]=time_compare_1(p,r,k,blocksize, N,Ntest, T, savemat);
 
 %% Plots.
-loglog(1:length(p), mean(time1), 1:length(p), mean(time2), 1:length(p), mean(time3))
+figure; hold on
+set(gca,'XScale','log','YScale','log');
+for i = 1:4
+    loglog(p, mean(times(:,:,i)))
+end
+hold off
 
+%% Save.
 save 'TIMEEXPTSRESULTS.mat'
 %% SCRATCH.
