@@ -11,12 +11,12 @@ function [times, errs, feats]=time_compare_1(p,r,k,blocksize, N,Ntest, T, savema
 
 %prepare the data set
 gamscale=0.5;
+scaling = 1;
 penalty=0;
-scaling=1;
 beta=3;
 tol.rel = 1e-3;
 tol.abs= 1e-3;
-maxits=100;
+maxits=500;
 quiet=1;
 
 
@@ -84,8 +84,41 @@ for i=1:length(p)
         % SOLVE USING SDAD or SDAAP.
         %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         meth = meth + 1;
+        
+        % Make Y.
+        nt = size(train,1);
+        Xt = train(:, 2:(p(i) + 1));        
+        
+        labs = train(:,1);
+        Yt = zeros(nt, k);
+        for ii = 1:nt
+            Yt(ii, labs(ii)) = 1;
+        end
+        
+        % Set ASDA parameters.
+        tmp = rand(p(i));
+        Om = D + 1e-2*(tmp*tmp');
+        gam = 0.1;
+        lam = 0.15; % What is a better choice?
+        q = k-1;
+        PGsteps = 500;
+        PGtol = 1e-3;
+        maxits = 500;
+        ASDAtol = 1e-3;
+        
+        % Call ASDA-APG.
+        tic
+        % Add classMeans calculation.
+        % Add lambda calculation.
+        [DVs,~] = SDAAP(Xt, Yt, Om, gam, lam, q, PGsteps, PGtol, maxits, ASDAtol);
+        times(j,i,meth) = toc;
+        [stats,~,~,~]=predict(DVs,test,classMeans);
+        errs(j,i, meth)=stats.mc;
+        feats(j,i, meth)=sum(stats.l0);
+        
+        
         % Calculate gamma/lambda.
-        % Edit timing, err, feat storage/reporting.
+        
         
         %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         % SOLVE USING OLD CODE.
