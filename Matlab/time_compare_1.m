@@ -97,58 +97,40 @@ for i=1:length(p)
         
         % Set ASDA parameters.
         tmp = rand(p(i));
-        Om = D + 1e-2*(tmp*tmp');
+%         Om = D + 1e-2*(tmp*tmp');
+        Om = D;
         gam = 0.1;
         %lam = 0.15; % What is a better choice?
         q = k-1;
-        PGsteps = 500;
-        PGtol = 1e-3;
+        PGsteps = 1000;
+        PGtol = 1e-5;
+        
+%         PGsteps = 1000;
+%         PGtol.abs = 1e-5;
+%         PGtol.rel = 1e-5;
+%         mu = 2;
+
+        
         maxits = 500;
         ASDAtol = 1e-3;
         
         % Call ASDA-APG.
         tic
-        % Add classMeans calculation.
-        classes=train(:,1);
+        
+        % Extract training observations.
         [nt,pt]=size(train);
-        X=train(:,2:pt);
-        %X=normalize(X);
-        %Extract observations
-        labels=unique(classes);
-        K=length(labels);
-        %Initiate matrix of within-class means
-        pt=pt-1;
-        classMeans=zeros(pt,K);
-        ClassMeans=zeros(pt,K);
+        Xt=train(:,2:pt);
         
-        % Initialize gamma.
-        gamma = zeros(K-1,1);
-        
-        %for each class, make an object in the list containing only the obs of that
-        %class and update the between and within-class sample
-        M=zeros(pt,nt);
-        
-        for ii=1:K
-            class_obs=X(classes==labels(ii),:);
-            %Get the number of obs in that class (the number of rows)
-            ni=size(class_obs,1);
-            %Compute within-class mean
-            classMeans(:,ii)=mean(class_obs);
-            %Update W
-            xj=class_obs-ones(ni,1)*classMeans(:,ii)';
-            M(:,classes == labels(ii)) =xj';
-            ClassMeans(:,ii)=mean(class_obs)*sqrt(ni);
-        end
-    
+            
         % Add lambda calculation.
         A = 2*(Xt'*Xt + gam*Om);
         % Precompute Mj = I - Qj*Qj'*D.
-        Qj = ones(K, 1);
+        Qj = ones(k, 1);
         Di = 1/nt*(Yt'*Yt);
         Mj = @(u) u - Qj*(Qj'*(Di*u));
         
         % Initialize theta.
-        theta = Mj(rand(K,1));
+        theta = Mj(rand(k,1));
         theta = theta/sqrt(theta'*Di*theta);
         
         %%
@@ -166,6 +148,7 @@ for i=1:length(p)
 
         % Call SDAAP.
         [DVs,~] = SDAAP(Xt, Yt, Om, gam, lam, q, PGsteps, PGtol, maxits, ASDAtol);
+%         [DVs,~] = SDAD(Xt, Yt, Om, gam, lam, mu, q, PGsteps, PGtol, maxits, ASDAtol);
         times(j,i,meth) = toc;
         [stats,~,~,~]=predict(DVs,test,classMeans);
         errs(j,i, meth)=stats.mc;
@@ -178,6 +161,7 @@ for i=1:length(p)
         %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         % SOLVE USING OLD CODE.
         %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%         gamma
         meth = meth + 1;
         beta = 3;
         %Repeat using the old code and save results to remaining matrices.
