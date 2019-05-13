@@ -42,6 +42,7 @@ for i=1:length(p)
         train = type1_data(p(i),r,k,N(:, i), blocksize(i)); 
         [train_obs, mu_train, sig_train] = normalize(train(:,2:(p(i)+1)));
         train=[train(:,1), train_obs];
+        size(train);
         
         % Reset method number.
         meth = 0;
@@ -99,11 +100,11 @@ for i=1:length(p)
         tmp = rand(p(i));
 %         Om = D + 1e-2*(tmp*tmp');
         Om = D;
-        gam = 0.1;
+        gam = 0.001;
         %lam = 0.15; % What is a better choice?
         q = k-1;
         PGsteps = 1000;
-        PGtol = 1e-5;
+        PGtol = 1e-4;
         
 %         PGsteps = 1000;
 %         PGtol.abs = 1e-5;
@@ -119,8 +120,7 @@ for i=1:length(p)
         
         % Extract training observations.
         [nt,pt]=size(train);
-        Xt=train(:,2:pt);
-        
+        Xt=train(:,2:pt);        
             
         % Add lambda calculation.
         A = 2*(Xt'*Xt + gam*Om);
