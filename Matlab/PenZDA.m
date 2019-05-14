@@ -32,21 +32,13 @@ for i=1:K
     R(i,:)= sqrt(ni)*mean(class_obs)';
 end
 
-%Find ZVDs 
-
-tic
+%Find null basis. 
 N=null(M');
-Ntime = toc;
-fprintf('Null time = %1.3e \n', Ntime)
 
 %Compute leading eigenvector of N'*B*N
 RN = R*N;
-%size(RN)
-tic
 [~,sigma,w]=svds(RN, 1,'largest');
 Nw = N*w;
-svdtime = toc;
-fprintf('SVDS time = %1.3e \n', svdtime);
 
 % normalize R.
 R=R/sigma;
@@ -72,14 +64,11 @@ end
 % Set gamma.
 gamma(1)=gamscale*norm(RN*w,2)^2/norm(Dx(Nw),1);
 
-% ppt = toc;
-% fprintf('ppt %1.4d \n', ppt)
-
 %Initialization for the output
 DVs=zeros(p,K-1);
 its=zeros(1,K-1);
-%Call ADMM
 
+%Call ADMM
 for i=1:(K-1)
     %Initial solutions.
 %     tic
@@ -87,7 +76,6 @@ for i=1:(K-1)
     sols0.y = Dx(Nw);
     sols0.z = zeros(p,1);
     
-    tic
     if isequal(consttype,'ball')
         
         % Call ball-constrained solver.
@@ -106,8 +94,6 @@ for i=1:(K-1)
         error('Invalid constraint type. Please indicate if using inequality ("ball") or equality ("sphere") constraints.')
     end
     
-    admmtime = toc;
-    fprintf('ADMM converged after %d its and %1.e s \n', its, admmtime)       
     
     
     
@@ -122,25 +108,28 @@ for i=1:(K-1)
 %     tic
     if(i<(K-1))
         %Project N onto orthogonal complement of Nx 
-        x=Dx(N*x);
-        x=x/norm(x);
-        tic;
-        N=Nupdate1(N,x);
+         
+        % Calculate discriminant vector from x.
+%         x=Dx(N*x);     
+% x=x/norm(x);
+        
+        % Try y instead.
+        x = DVs(:,i);
         
         
+        
+        % Call N update.
+        N=Nupdate1(N,x);       
+        
+        % Update RN and initial solution.
         RN = R*N;
         [~,sigma,w]=svds(RN, 1, 'largest');
-        
-        Ntime = toc;
-        fprintf('N update = %1.3e \n', Ntime);
         
         R=R/sigma;
         % Set gamma.
         Nw = N*w;
         gamma(i+1)=gamscale*norm(RN*w,2)^2/norm(Dx(Nw),1);
     end
-%     ntime = ntime + toc;
-%     fprintf('Nt %1.4d \n', ntime)
     
 end
 

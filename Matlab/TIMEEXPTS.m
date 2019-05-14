@@ -7,7 +7,7 @@ p = [3000:500:5000, 6000:1000:10000];
 %p = [150:50:500, 600:100:1000, 1250: 250:2500];
 %p = 2500;
 
-p = 2000;
+p = 1500;
 
 N = 25*ones(k,length(p));
 blocksize = ceil(p/(2*k));
@@ -17,8 +17,6 @@ savemat = true;
 r = 0.5;
 
 %% Run experiment.
-
-
 
 [times, errs, feats]=time_compare_1(p,r,k,blocksize, N,Ntest, T, savemat);
 fprintf('DONEZO!\n\n')

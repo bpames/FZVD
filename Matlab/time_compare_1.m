@@ -130,7 +130,7 @@ for i=1:length(p)
         Mj = @(u) u - Qj*(Qj'*(Di*u));
         
         tmp1 = toc;
-        fprintf('A formation = %1.3e \n', tmp1)
+        %fprintf('A formation = %1.3e \n', tmp1)
         
         tic
         % Initialize theta.
@@ -151,7 +151,7 @@ for i=1:length(p)
         lam = gamscale*lmax;
         
         tmp2 = toc;
-        fprintf('Initialization and lambda = %1.3e \n', tmp2)
+        %fprintf('Initialization and lambda = %1.3e \n', tmp2)
 
         % Call SDAAP.
         tic 
@@ -159,7 +159,7 @@ for i=1:length(p)
 %         [DVs,~] = SDAD(Xt, Yt, Om, gam, lam, mu, q, PGsteps, PGtol, maxits, ASDAtol);
 
         tmp3 = toc;
-        fprintf('Solver = %1.3e \n', tmp3)
+        %fprintf('Solver = %1.3e \n', tmp3)
         
         times(j,i,meth) = tmp1 + tmp2 + tmp3;
         [stats,~,~,~]=predict(DVs,test,classMeans);
