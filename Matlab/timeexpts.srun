@@ -1,0 +1,11 @@
+#!/bin/bash
+#SBATCH -J penzdatt
+#SBATCH -n 1
+#SBATCH -p owners
+#SBATCH --qos math
+#SBATCH -e err513.txt
+#SBATCH -o output513.txt
+#SBATCH --mail-user bpames@ua.edu
+#SBATCH --mail-type=ALL
+
+matlab -singleCompThread -nodisplay -nojvm -r "run('/home/bpames/PENZDA-time-trials/TIMEEXPTS.m')"

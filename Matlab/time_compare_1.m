@@ -129,11 +129,15 @@ for i=1:length(p)
         Di = 1/nt*(Yt'*Yt);
         Mj = @(u) u - Qj*(Qj'*(Di*u));
         
+        tmp1 = toc;
+        fprintf('A formation = %1.3e \n', tmp1)
+        
+        tic
         % Initialize theta.
         theta = Mj(rand(k,1));
         theta = theta/sqrt(theta'*Di*theta);
         
-        %%
+        %
         % Form d.
         d = 2*Xt'*Yt*theta/nt;
         
@@ -145,11 +149,19 @@ for i=1:length(p)
         
         % Set lambda.
         lam = gamscale*lmax;
+        
+        tmp2 = toc;
+        fprintf('Initialization and lambda = %1.3e \n', tmp2)
 
         % Call SDAAP.
+        tic 
         [DVs,~] = SDAAP(Xt, Yt, Om, gam, lam, q, PGsteps, PGtol, maxits, ASDAtol);
 %         [DVs,~] = SDAD(Xt, Yt, Om, gam, lam, mu, q, PGsteps, PGtol, maxits, ASDAtol);
-        times(j,i,meth) = toc;
+
+        tmp3 = toc;
+        fprintf('Solver = %1.3e \n', tmp3)
+        
+        times(j,i,meth) = tmp1 + tmp2 + tmp3;
         [stats,~,~,~]=predict(DVs,test,classMeans);
         errs(j,i, meth)=stats.mc;
         feats(j,i, meth)=sum(stats.l0);
