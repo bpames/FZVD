@@ -3,22 +3,26 @@ k = 4;
 %p = [500, 1000];
 
 %p = 25*2.^(0:8);
-%p = [50:50:500 , 600:100:1000, 1250: 250:2500, 3000:500:4000];
+p = [3000:500:5000, 6000:1000:10000];
+%p = [150:50:500, 600:100:1000, 1250: 250:2500];
+%p = 2500;
 
-p = [50:50:1000];%, 600:100:1000, 1250: 250:2500, 3000:500:5000];
-N = 10*ones(k,length(p));
+N = 25*ones(k,length(p));
 blocksize = ceil(p/(2*k));
 Ntest = 500*ones(k, length(p));
-T = 10;
+T = 100;
 savemat = true;
 r = 0.5;
 
 %% Run experiment.
-[time1,time2,time3, err1, err2, err3, feat1, feat2, feat3]=time_compare_1(p,r,k,blocksize, N,Ntest, T, savemat);
 
 
-%% Plots.
-loglog(1:length(p), mean(time1), 1:length(p), mean(time2), 1:length(p), mean(time3))
 
+[times, errs, feats]=time_compare_1(p,r,k,blocksize, N,Ntest, T, savemat);
+fprintf('DONEZO!\n\n')
+
+
+%% Save.
 save 'TIMEEXPTSRESULTS.mat'
+
 %% SCRATCH.

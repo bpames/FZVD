@@ -37,6 +37,7 @@ ending=N(1);
 for i=1:k
     %sample observations
     obs(start:ending,1)=i*ones(N(i),1);
+    %size(mu)
     obs(start:ending, 2:(p+1))=mvnrnd(mu(:,i),sigma,N(i));
     
     %update block positions

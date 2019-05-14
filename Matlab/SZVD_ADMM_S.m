@@ -129,7 +129,11 @@ for iter=1:maxits
     % (according to the formula z_k+1 = z_k + beta*(N*x_k+1 - y_k+1) ).
     %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     %zold = z;
-    z = real(z + beta*(Dx(N*x) - y));
+    % Primal residual.
+    r = Dx(N*x) - y;    
+    
+    % Update z.
+    z = real(z + beta*r);
     
     %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     % Check stopping criteria.
@@ -138,8 +142,7 @@ for iter=1:maxits
     %----------------------------------------------------------------
     % Primal constraint violation.
     %----------------------------------------------------------------
-    % Primal residual.
-    r = Dx(N*x) - y;    
+    
     % l2 norm of the residual.
     dr = norm(r);
 	

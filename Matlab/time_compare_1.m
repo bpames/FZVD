@@ -1,4 +1,4 @@
-function [timeB,timeS, time0,  ErrB, ErrS, Err0, FeatB, FeatS, Feat0]=time_compare_1(p,r,k,blocksize, N,Ntest, T, savemat)
+function [times, errs, feats]=time_compare_1(p,r,k,blocksize, N,Ntest, T, savemat)
 %p: vector of number of features
 %r: value of constant covariance between features
 %k: number of classes
@@ -11,23 +11,23 @@ function [timeB,timeS, time0,  ErrB, ErrS, Err0, FeatB, FeatS, Feat0]=time_compa
 
 %prepare the data set
 gamscale=0.5;
+scaling = 1;
 penalty=0;
-scaling=1;
 beta=3;
 tol.rel = 1e-3;
 tol.abs= 1e-3;
-maxits=100;
+maxits=500;
 quiet=1;
 
 
 %Initialize matrices for storing results
-timeB = zeros(T, length(p));
-time0=timeB;ErrB=timeB;Err0=timeB;FeatB=timeB;Feat0 = timeB;
-timeS=timeB; ErrS = timeB; FeatS = timeB;
+times = zeros(T, length(p),4);
+errs = times;
+feats = times;
 
 % Set up timing table
 fprintf('++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n')
-fprintf('p   \t | Ball \t | Sphere \t | Old \n')
+fprintf('p   \t | Ball \t | Sphere \t | ASDA \t | Old \n')
 fprintf('++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n')
 
 for i=1:length(p)
@@ -42,14 +42,20 @@ for i=1:length(p)
         train = type1_data(p(i),r,k,N(:, i), blocksize(i)); 
         [train_obs, mu_train, sig_train] = normalize(train(:,2:(p(i)+1)));
         train=[train(:,1), train_obs];
+        size(train);
         
-   
+        % Reset method number.
+        meth = 0;
+        
+        %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         % SOLVE USING BALL CONSTRAINED PENZDA.
+        %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        meth = meth + 1;
         consttype = 'ball';        
         tic;
         [DVs,~, ~,~,classMeans, gamma] = PenZDA(train,D, tol,maxits,beta,quiet, consttype,gamscale);
               
-        timeB(j, i) =toc; % Stop timer after training is finished.        
+        times(j, i, meth) =toc; % Stop timer after training is finished.        
         
         % Sample and normalize test data.
         test = type1_data(p(i),r,k,Ntest(:, i), blocksize(i)); 
@@ -59,49 +65,134 @@ for i=1:length(p)
         
         % Check classification and feature selection performance.
         [stats,~,~,~]=predict(DVs,test,classMeans);
-        ErrB(j,i)=stats.mc;
-        FeatB(j,i)=sum(stats.l0);
+        errs(j,i, meth)=stats.mc;
+        feats(j,i, meth)=sum(stats.l0);
         
         %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         % SOLVE USING SPHERICALLY CONSTRAINED PROBLEM.
         %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        
+        meth = meth + 1;
         consttype = 'sphere';        
         tic;
         [DVs,~, ~,~,classMeans,~] = PenZDA(train,D, tol,maxits,beta,quiet, consttype,gamscale);              
-        timeS(j, i) =toc; % Stop timer after training is finished.        
+        times(j,i, meth) =toc; % Stop timer after training is finished.        
         % Check classification and feature selection performance.
         [stats,~,~,~]=predict(DVs,test,classMeans);
-        ErrS(j,i)=stats.mc;
-        FeatS(j,i)=sum(stats.l0);
+        errs(j,i, meth)=stats.mc;
+        feats(j,i, meth)=sum(stats.l0);
         
         %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         % SOLVE USING SDAD or SDAAP.
         %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        meth = meth + 1;
+        
+        % Make Y.
+        nt = size(train,1);
+        Xt = train(:, 2:(p(i) + 1));        
+        
+        labs = train(:,1);
+        Yt = zeros(nt, k);
+        for ii = 1:nt
+            Yt(ii, labs(ii)) = 1;
+        end
+        
+        % Set ASDA parameters.
+        tmp = rand(p(i));
+%         Om = D + 1e-2*(tmp*tmp');
+        Om = D;
+        gam = 0.001;
+        %lam = 0.15; % What is a better choice?
+        q = k-1;
+        PGsteps = 1000;
+        PGtol = 1e-4;
+        
+%         PGsteps = 1000;
+%         PGtol.abs = 1e-5;
+%         PGtol.rel = 1e-5;
+%         mu = 2;
+
+        
+        maxits = 500;
+        ASDAtol = 1e-3;
+        
+        % Call ASDA-APG.
+        tic
+        
+        % Extract training observations.
+        [nt,pt]=size(train);
+        Xt=train(:,2:pt);        
+            
+        % Add lambda calculation.
+        A = 2*(Xt'*Xt + gam*Om);
+        % Precompute Mj = I - Qj*Qj'*D.
+        Qj = ones(k, 1);
+        Di = 1/nt*(Yt'*Yt);
+        Mj = @(u) u - Qj*(Qj'*(Di*u));
+        
+        tmp1 = toc;
+        fprintf('A formation = %1.3e \n', tmp1)
+        
+        tic
+        % Initialize theta.
+        theta = Mj(rand(k,1));
+        theta = theta/sqrt(theta'*Di*theta);
+        
+        %
+        % Form d.
+        d = 2*Xt'*Yt*theta/nt;
+        
+        % Initialize beta.
+        beta = A\d; % 1st unpenalized solution.
+        
+        % Choose lambda so that unpenalized solution always has negative value.
+        lmax = (beta'*d - 0.5*beta'*A*beta)/norm(beta, 1);
+        
+        % Set lambda.
+        lam = gamscale*lmax;
+        
+        tmp2 = toc;
+        fprintf('Initialization and lambda = %1.3e \n', tmp2)
+
+        % Call SDAAP.
+        tic 
+        [DVs,~] = SDAAP(Xt, Yt, Om, gam, lam, q, PGsteps, PGtol, maxits, ASDAtol);
+%         [DVs,~] = SDAD(Xt, Yt, Om, gam, lam, mu, q, PGsteps, PGtol, maxits, ASDAtol);
+
+        tmp3 = toc;
+        fprintf('Solver = %1.3e \n', tmp3)
+        
+        times(j,i,meth) = tmp1 + tmp2 + tmp3;
+        [stats,~,~,~]=predict(DVs,test,classMeans);
+        errs(j,i, meth)=stats.mc;
+        feats(j,i, meth)=sum(stats.l0);
+        
+        
         % Calculate gamma/lambda.
-        % Edit timing, err, feat storage/reporting.
+        
         
         %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         % SOLVE USING OLD CODE.
         %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                   
+%         gamma
+        meth = meth + 1;
+        beta = 3;
         %Repeat using the old code and save results to remaining matrices.
         tic;
         [DVs2,~,~,~,~,~]=SZVD_01(train,gamma,D,penalty,scaling,tol,maxits,beta,1);
 
-        time0(j, i) =toc;
+        times(j,i, meth) =toc;
         
         %fprintf('old-test')
         [stats, ~] = predict(DVs2,test,classMeans);
-        Err0(j,i)=stats.mc;
-        Feat0(j,i)=sum(stats.l0);
+        errs(j,i, meth)=stats.mc;
+        feats(j,i, meth)=sum(stats.l0);
         
         % Print intermediate stats.
-        fprintf('%4d \t | %1.4f \t | %1.4f \t | %1.4f \n', p(i), timeB(j,i), timeS(j,i), time0(j,i))
+        fprintf('%4d \t | %1.3f \t | %1.3f \t | %1.3f \t | %1.3f \n', p(i), times(j,i, 1), times(j,i, 2), times(j,i, 3), times(j,i, 4))
         
         % Save workspace if desired.
         if(savemat)
-            save 'timecompareres.mat' timeB timeS time0 ErrB ErrS Err0 FeatB FeatS Feat0
+            save 'timecompareres.mat' times errs feats
         end
     end
 end
