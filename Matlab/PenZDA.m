@@ -18,7 +18,7 @@ gamma = zeros(K-1,1);
 
 %for each class, make an object in the list containing only the obs of that
 %class and update the between and within-class sample
-M=zeros(p,n);
+M=zeros(n,p);
 
 for i=1:K    
     class_obs=X(classes==labels(i),:);
@@ -26,14 +26,13 @@ for i=1:K
     ni=size(class_obs,1);
     %Compute within-class mean
     classMeans(:,i)=mean(class_obs);
-    %Update W 
-    xj=class_obs-ones(ni,1)*classMeans(:,i)';
-    M(:,classes == labels(i)) =xj';
-    R(i,:)= sqrt(ni)*mean(class_obs)';
+    %Update W and R.
+    M(classes == labels(i),:) =class_obs-ones(ni,1)*classMeans(:,i)';
+    R(i,:)= sqrt(ni)*classMeans(:,i)';
 end
 
 %Find null basis. 
-N=null(M');
+N=null(M);
 
 %Compute leading eigenvector of N'*B*N
 RN = R*N;
