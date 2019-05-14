@@ -11,7 +11,7 @@ K=length(labels);
 %Initiate matrix of within-class means
 p=p-1;
 classMeans=zeros(p,K);
-ClassMeans=zeros(p,K);
+R=zeros(K,p);
 
 % Initialize gamma.
 gamma = zeros(K-1,1);
@@ -29,18 +29,25 @@ for i=1:K
     %Update W 
     xj=class_obs-ones(ni,1)*classMeans(:,i)';
     M(:,classes == labels(i)) =xj';
-    ClassMeans(:,i)=mean(class_obs)*sqrt(ni);
+    R(i,:)= sqrt(ni)*mean(class_obs)';
 end
 
-%Symmetrize W and B
-R=ClassMeans';
 %Find ZVDs 
+
+tic
 N=null(M');
+Ntime = toc;
+fprintf('Null time = %1.3e \n', Ntime)
 
 %Compute leading eigenvector of N'*B*N
 RN = R*N;
 %size(RN)
+tic
 [~,sigma,w]=svds(RN, 1,'largest');
+Nw = N*w;
+svdtime = toc;
+fprintf('SVDS time = %1.3e \n', svdtime);
+
 % normalize R.
 R=R/sigma;
 RN = RN/sigma;
@@ -51,19 +58,19 @@ if isdiag(D)
     d = diag(D); 
     if norm(d - ones(p,1)) < 1e-12 % D=I
         Dx = @(x) x;
-        Dtx = Dx;
+        %Dtx = Dx;
     else % D ~=I
         Dx = @(x) d.*x; % diagonal scaling if D is diagonal.
-        Dtx = Dx;
+        %Dtx = Dx;
     end
 else
     Dx = @(x) D*x;
-    Dtx = @(x) D'*x;
+%     Dtx = @(x) D'*x;
 end
 
 
 % Set gamma.
-gamma(1)=gamscale*norm(RN*w,2)^2/norm(Dx(N*w),1);
+gamma(1)=gamscale*norm(RN*w,2)^2/norm(Dx(Nw),1);
 
 % ppt = toc;
 % fprintf('ppt %1.4d \n', ppt)
@@ -77,12 +84,14 @@ for i=1:(K-1)
     %Initial solutions.
 %     tic
     sols0.x = w;
-    sols0.y = Dx(N*w);
+    sols0.y = Dx(Nw);
     sols0.z = zeros(p,1);
     
+    tic
     if isequal(consttype,'ball')
         
         % Call ball-constrained solver.
+        
         [x,y,~,its]=SZVD_ADMM_V2(R,N,RN, D,sols0,gamma(i),beta,tol,maxits,quiet);
         
         % Normalize y, if necessary.
@@ -96,6 +105,10 @@ for i=1:(K-1)
     else % ERROR. 
         error('Invalid constraint type. Please indicate if using inequality ("ball") or equality ("sphere") constraints.')
     end
+    
+    admmtime = toc;
+    fprintf('ADMM converged after %d its and %1.e s \n', its, admmtime)       
+    
     
     
 %     st = st + toc;
@@ -111,12 +124,20 @@ for i=1:(K-1)
         %Project N onto orthogonal complement of Nx 
         x=Dx(N*x);
         x=x/norm(x);
+        tic;
         N=Nupdate1(N,x);
+        
+        
         RN = R*N;
         [~,sigma,w]=svds(RN, 1, 'largest');
+        
+        Ntime = toc;
+        fprintf('N update = %1.3e \n', Ntime);
+        
         R=R/sigma;
         % Set gamma.
-        gamma(i+1)=gamscale*norm(RN*w,2)^2/norm(Dx(N*w),1);
+        Nw = N*w;
+        gamma(i+1)=gamscale*norm(RN*w,2)^2/norm(Dx(Nw),1);
     end
 %     ntime = ntime + toc;
 %     fprintf('Nt %1.4d \n', ntime)

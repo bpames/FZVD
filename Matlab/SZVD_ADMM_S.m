@@ -60,10 +60,11 @@ end
 K= size(R, 1);
 % Compute initial x.
 x = sols0.x;
+Nx = N*x;
  % Take Cholesky of beta I - B (for use in update of x)
 %V=chol(eye(K)-1/beta*R*(N*N')*R','upper');
 %[V1,V2] = qr(eye(K)-1/beta*R*(N*N')*R');
-[P,L] = lu(eye(K)-1/beta*RN*RN');
+[P,L] = lu(eye(K)-1/beta*(RN*RN'));
 
 
 %====================================================================
@@ -73,8 +74,6 @@ x = sols0.x;
 % Initialize y and z.
 y = sols0.y;
 z = sols0.z;
-
-
 
 %====================================================================
 %% Call the algorithm.
@@ -91,7 +90,7 @@ for iter=1:maxits
     
     
     % Calculate largest magnitude entry of b.
-    b = Dx(N*x) + z;
+    b = Dx(Nx) + z;
     [mx, ix] = max(abs(b));
     
     % Update y. 
@@ -130,7 +129,8 @@ for iter=1:maxits
     %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     %zold = z;
     % Primal residual.
-    r = Dx(N*x) - y;    
+    Nx = N*x;
+    r = Dx(Nx) - y;    
     
     % Update z.
     z = real(z + beta*r);

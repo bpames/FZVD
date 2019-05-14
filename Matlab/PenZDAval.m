@@ -30,7 +30,7 @@ K=length(labels);
 %Initiate matrix of within-class means
 p=p-1;
 classMeans=zeros(p,K);
-R=zeros(p,K);
+R=zeros(K,p);
 
 %for each class, make an object in the list containing only the obs of that
 %class and update the between and within-class sample
@@ -47,12 +47,10 @@ for i=1:K
     %Update W 
     xj=class_obs-ones(ni,1)*classMeans(:,i)';
     M(:,classes == labels(i)) =xj';
-    R(:,i)=mean(class_obs)*sqrt(ni);
+    R(i,:)= sqrt(ni)*mean(class_obs)';
 end
 
-% Calculate R and N.
-R=R';
-%Find ZVDs 
+% Calculate null basis.
 N=null(M');
 
 %Compute leading eigenvector of N'*B*N

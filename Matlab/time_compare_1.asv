@@ -52,10 +52,10 @@ for i=1:length(p)
         %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         meth = meth + 1;
         consttype = 'ball';        
-        btime = tic;
+        tic;
         [DVs,~, ~,~,classMeans, gamma] = PenZDA(train,D, tol,maxits,beta,quiet, consttype,gamscale);
               
-        times(j, i, meth) =toc(btime); % Stop timer after training is finished.        
+        times(j, i, meth) =toc; % Stop timer after training is finished.        
         
         % Sample and normalize test data.
         test = type1_data(p(i),r,k,Ntest(:, i), blocksize(i)); 
@@ -73,9 +73,9 @@ for i=1:length(p)
         %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         meth = meth + 1;
         consttype = 'sphere';        
-        stime = tic;
+        tic;
         [DVs,~, ~,~,classMeans,~] = PenZDA(train,D, tol,maxits,beta,quiet, consttype,gamscale);              
-        times(j,i, meth) =toc(stime); % Stop timer after training is finished.        
+        times(j,i, meth) =toc; % Stop timer after training is finished.        
         % Check classification and feature selection performance.
         [stats,~,~,~]=predict(DVs,test,classMeans);
         errs(j,i, meth)=stats.mc;
@@ -177,10 +177,10 @@ for i=1:length(p)
         meth = meth + 1;
         beta = 3;
         %Repeat using the old code and save results to remaining matrices.
-        szvd01start = tic;
+        szvd01start = tic
         [DVs2,~,~,~,~,~]=SZVD_01(train,gamma,D,penalty,scaling,tol,maxits,beta,1);
 
-        times(j,i, meth) =toc(szvd01start);
+        times(j,i, meth) =toc;
         
         %fprintf('old-test')
         [stats, ~] = predict(DVs2,test,classMeans);
