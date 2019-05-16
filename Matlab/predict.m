@@ -1,4 +1,4 @@
-function [stats,preds,proj,cent]=predict(w,test,classMeans)
+function [stats,preds,proj,cent, dist]=predict(w,test,classMeans)
 %w: matrix with columns are disrciminant vectors
 %test:test data
 %ClassMeans: means of each class in the training data: R'

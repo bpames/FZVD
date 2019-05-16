@@ -143,46 +143,46 @@ penzda <- function(Xt, Yt, D = diag(p), tol=1e-3, maxits=1000, bta=3, quiet=FALS
     
     # Record number of iterations.
     its[i] <- ADMMres$its
+    
+    # Update null-basis.
+    if (i < (k-1)){
+      print('Updating N')
+      # Extract vector to add to rows of W.
+      v <- DVs[,i]
+      
+      # Call Nupdate.
+      N <- Nupdate(N=N, v = v)
+      
+      # Update RN and initial solution.
+      RN <- R %*% N
+      
+      if(min(dim(RN)) <= 2){ # k or p <= 2
+        # Take SVD (keep first right singular vector)
+        SVDres <- svd(x=RN, nu=0, nv = 1)
+      }
+      else{ 
+        # Use Lanczos method to find dominant singular value/right vector.
+        SVDres <- svds(A = RN, k =1, nu = 0, nv =1)
+      }
+      
+      # Extract singular value/vector.
+      sig <- SVDres$d[1]
+      w <- SVDres$v[,1]
+      
+      Nw <- N %*% w
+      
+      # Normalize R.
+      R <- R/sig
+      RN <- RN/sig
+      
+      # Calculate next gamma.
+      gam[i+1] <- gamscale*norm(x=RN%*%w, type = "F")^2/norm(x=sols0$y, type="1")
+      
+    }
 
   }
   
-  # Update null-basis.
-  if (i < (k-1)){
-    # Extract vector to add to rows of W.
-    v <- DVs[,i]
-  
-    # Call Nupdate.
-    N <- Nupdate(N=N, v = v)
-    
-    # Update RN and initial solution.
-    RN <- R %*% N
-    
-    if(min(dim(RN)) <= 2){ # k or p <= 2
-      # Take SVD (keep first right singular vector)
-      SVDres <- svd(x=RN, nu=0, nv = 1)
-    }
-    else{ 
-      # Use Lanczos method to find dominant singular value/right vector.
-      SVDres <- svds(A = RN, k =1, nu = 0, nv =1)
-    }
-    
-    # Extract singular value/vector.
-    sig <- SVDres$d[1]
-    w <- SVDres$v[,1]
-    
-    Nw <- N %*% w
-    
-    # Normalize R.
-    R <- R/sig
-    RN <- RN/sig
-    
-    # Calculate next gamma.
-    gam[i+1] <- gamscale*norm(x=RN%*%w, type = "F")^2/norm(x=sols0$y, type="1")
-    
-  }
-    
-  
-  
+  # Output.
   return(list(DVs = DVs, its = its, classmns = classMeans, k=k, labels=labs, gam = gam))
 
 }
@@ -304,9 +304,10 @@ penzdaADMM <- function(R, N, RN, D = diag(p), sols0, gam, bta = 3,
     # xtmp <- forwardsolve(l = t(V), x = RN %*% b)
     # xtmp <- backsolve(r = V, x = xtmp)
     # x <- 1/bta * b + 1/bta^2 * t(RN) %*% xtmp
-    # print(length(x))
+    print("Length x")
+     print(length(x))
     # print(dim(RN))
-    x <- solve(a = (beta*diag(length(x)) - (t(RN) %*% RN)), b= b)
+    x <- solve(a = (bta*diag(length(x)) - (t(RN) %*% RN)), b= b)
     
     print(norm(x - xold, type= "F"))
     
@@ -442,6 +443,8 @@ Nupdate <- function(N,v){
   # Calculate N1 using Householder reflection.
   N1 <- N[, 2:d] - 2* (N %*% x) %*% t(x[2:d])
   
+  print('Updated N. New dimensions are:')
+  print(dim(N1))
   # Output.
   return(N1)
   

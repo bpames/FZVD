@@ -3,12 +3,13 @@ n <- dim(train)[1]
 p <- dim(train)[2] - 1
 
 Xtrain <- as.matrix(train[, 2:(p+1)])
-Ytrain <- train$X1
+Ytrain <- as.factor(train$X1)
 
 Xtest <- as.matrix(test[, 2:(p+1)])
-Ytest <- test$X1
+Ytest <- as.factor(test$X1)
 
 ntest <- dim(test)[1]
+
 
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -32,11 +33,13 @@ plot(res$beta, type = 'l')
 library(MASS)
 library(rARPACK)
 
-cmns <- penzda(Xt = Xtrain, Yt = Ytrain, maxits=15, tol = 1e-3, type ="sphere")
+cmns <- penzda(Xt = Xtrain, Yt = Ytrain, maxits=50, tol = 1e-3, type ="ball")
 cmns$DVs
-plot(cmns$DVs, type="l")
+plot(cmns$DVs[,1], type="l")
 
 penstats <- predict(obj = cmns, Xtest = Xtest, Ytest = Ytest)
+
+cbind(penstats$preds, Ytest, penstats$dist)
 
 v  <- c(1, 2, -4)
 a <- 1.5

@@ -72,6 +72,7 @@ its=zeros(1,K-1);
 for i=1:(K-1)
     %Initial solutions.
     sols0.x = w;    
+    fprintf('length x: %d', length(w))
     sols0.z = zeros(p,1);
     
     
