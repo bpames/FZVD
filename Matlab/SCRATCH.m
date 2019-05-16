@@ -94,14 +94,14 @@ gamscale = 0.5;
 D = eye(p);
 tol.abs = 1e-3;
 tol.rel = 1e-3;
-maxits = 100;
+maxits = 1000;
 beta = 3;
-quiet = true;
+quiet = false;
 tic;
 pentype = 'ball';
-[DVs,~,~,~,classMeans, gamma] = PenZDA(train,D,tol,maxits,beta,quiet, pentype,gamscale);
+[DVs2,~,~,~,classMeans, gamma] = PenZDA(train,D,tol,maxits,beta,quiet, pentype,gamscale);
 
-
+stats = predict(DVs, test, classMeans)   
              
 t0 = toc, % Stop timer after training is finished.
         

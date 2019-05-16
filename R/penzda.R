@@ -140,7 +140,7 @@ penzda <- function(Xt, Yt, D = diag(p), tol=1e-3, maxits=1000, beta=3, quiet=FAL
   
   
   
-  return(list(cmns = classMeans, k=k, labs=labs, gamma = gamma))
+  return(list(DVs = DVs, its = its, classmns = classMeans, k=k, labels=labs, gamma = gamma))
 
 }
 
@@ -164,4 +164,135 @@ penzdaADMM <- function(R, N, RN, D = diag(p), sols0, gamma, beta = 3,
                           tol = 1e-4, maxits = 1000, 
                           type = "ball", quiet = FALSE)
 {  
+  # Check for valid type.
+  stopifnot(exprs = {
+    (type=="ball" | type=="sphere")
+  } ) 
+  
+  # Define D multiplication operators.
+  if (norm(x= (diag(diag(D)) - D), type='F') < 1e-12){
+    
+    d <- diag(D) # Extract diagonal of D.
+    if (norm(x= as.matrix(d - rep(1,p)), type='F') < 1e-12){ # D = I.
+    
+      Dx <- function(x){return(x)}
+      Dtx <- function(x){return(x)}
+    }
+    else{ # D is diagonal, but not identity.
+        Dx <- function(x){return(d*x)}
+        Dtx <- function(x){return(d*x)}
+    }
+  }
+  else{ # treat D as arbitrary matrix.
+    
+    Dx <- function(x){return(D%*%x)}
+    Dtx <- function(x){return(t(D)%*%x)}
+  }
+  
+  # Get number of classes.
+  k <- nrow(R)
+  
+  # Initialize x,y,z.
+  x <- sols0$x
+  Nx <- N%*%x
+  
+  y <- sols0$y
+  z <- sols0$z
+  
+  # Calculate Cholesky factorization for x-update.
+  V <- chol(diag(k) - 1/beta*(RN%*%t(RN)))
+  
+  # Iteratively update x,y,z.
+  for (iter in 1:maxits){
+    # Save previous iterate.
+    yold <- y
+    
+    # Update iteration count.
+    its <- iter
+    
+    #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    # Update y using soft-thresholding.
+    #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    if (type == "ball"){
+      
+      # Apply vecshrink.
+      y <- vecshrink(v=beta*Dx(Nx) + z, a=gamma)
+      
+      # Normalize.
+      tmp <- max(0, norm(x=y, type="F") - beta)
+      y <- y/(beta + tmp)
+    }
+    
+    #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    # Update x by solution of linear system of optimality conditions.
+    #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    
+    # Update right-hand side.
+    b <- t(N) %*% Dtx(beta*y - z)
+    
+    # Update using the SMW identity.
+    xtmp <- forwardsolve(l = t(V), x = b)
+    xtmp <- backsolve(r = V, x = xtmp)
+    x <- 1/beta * b + 1/beta^2 * t(RN) %*% xtmp
+    
+    #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    # Update z by dual ascent.
+    #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    
+    # Calculate primal feasibility residual.
+    Nx <- N %*% x
+    r <- Dx(Nx) - y
+    
+    # Ascent step.
+    z <- z + beta * r
+    
+    #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    # Check stopping criteria.
+    #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    
+    # Dual residual.
+    s <- beta * (y - yold)
+    
+    # Residual norms.
+    ds = norm(x = s, type = "F")
+    dr = norm(x = r, type = "F")
+    
+    # Compute absolute and relative tolerances.
+    ep = tol * (sqrt(p) + max(norm(x), norm(y)) )
+    es = tol * (sqrt(p) + norm(y))
+    
+    # Check for convergence.
+    if(dr < ep && ds < es) {
+      if (quiet == FALSE) {
+        print('DONEZO! Converged.')
+        print(its)
+      }
+      
+      # Output optimal solution.
+      return(list(x=x, y=y, z=z, its=its))
+      break  # STOP. Converged. 
+    }
+
+  }
+  
+  # For loop terminates after maximum number of iterations.
+  # Output solution after maximum number of iterations.
+  return(list(x=x, y=y, z=z, its=its))
+  if (quiet == FALSE) {print('DONEZO! Didnt converge')}
+
+}
+
+
+
+#' Soft threshholding operator.
+#'
+#' Applies the shrinkage operator to vector v with threshold a.
+#' @param v vector
+#' @param a threshold
+#' @return s soft threshholded vector.
+#' @export
+
+vecshrink <- function(v,a){
+  s <- sign(v)*pmax(abs(v)- a, 0 )
+  return(s)
 }

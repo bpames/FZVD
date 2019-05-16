@@ -34,3 +34,9 @@ library(rARPACK)
 
 cmns <- penzda(Xt = Xtrain, Yt = Ytrain, type ="sphere")
 
+
+v  <- c(1, 2, -4)
+a <- 1.5
+
+s <- vecshrink(v,a)
+

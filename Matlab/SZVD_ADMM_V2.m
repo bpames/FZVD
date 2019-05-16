@@ -61,10 +61,11 @@ end
 K= size(R, 1);
 % Compute initial x.
 x = sols0.x;
+Nx = N*x;
  % Take Cholesky of beta I - B (for use in update of x)
-%V=chol(eye(K)-1/beta*R*(N*N')*R','upper');
+V=chol(eye(K)-1/beta*(RN*RN'),'upper');
 %[V1,V2] = qr(eye(K)-1/beta*R*(N*N')*R');
-[P,L] = lu(eye(K)-1/beta*RN*RN');
+%[P,L] = lu(eye(K)-1/beta*(RN*RN'));
 
 
 %====================================================================
@@ -91,7 +92,7 @@ for iter=1:maxits
     yold = y;
     
     % Call soft-thresholding.  
-    y = vec_shrink(beta*Dx(N*x) + z, gamma);
+    y = vec_shrink(beta*Dx(Nx) + z, gamma);
     
     
     % Normalize y (if necessary).
@@ -109,9 +110,12 @@ for iter=1:maxits
     b = N'*Dtx(beta*y - z);
     
     % K > 2.
-    % Update using by solving the system LL'x = b.
-    xtmp=P\(RN*b);
-    xtmp=L\(xtmp);
+    % Update using by solving the system V'V x = b.
+    xtmp=V'\(RN*b);
+    xtmp=V\(xtmp);
+%     xtmp = P\(RN*b);
+%     xtmp = L\xtmp;
+    
     x=1/beta*b+1/beta^2*RN'*xtmp;
     
     % Truncate complex part (if have +0i terms appearing.)
@@ -124,7 +128,8 @@ for iter=1:maxits
     %zold = z;
     
     % Primal residual.
-    r = Dx(N*x) - y;  
+    Nx = N*x;
+    r = Dx(Nx) - y;  
     
     % Ascent step.
     z = real(z + beta*r);
