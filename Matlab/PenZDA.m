@@ -61,7 +61,8 @@ end
 
 
 % Set gamma.
-gamma(1)=gamscale*norm(RN*w,2)^2/norm(Dx(Nw),1);
+sols0.y = Dx(Nw);
+gamma(1)=gamscale*norm(RN*w,2)^2/norm(sols0.y,1);
 
 %Initialization for the output
 DVs=zeros(p,K-1);
@@ -70,9 +71,7 @@ its=zeros(1,K-1);
 %Call ADMM
 for i=1:(K-1)
     %Initial solutions.
-%     tic
-    sols0.x = w;
-    sols0.y = Dx(Nw);
+    sols0.x = w;    
     sols0.z = zeros(p,1);
     
     if isequal(consttype,'ball')

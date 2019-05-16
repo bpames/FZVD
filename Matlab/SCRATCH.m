@@ -90,7 +90,7 @@ ASDAstats = predict(B, test, classMeans)
 
 
 %% Call solver.
-gamscale = 0.3;
+gamscale = 0.5;
 D = eye(p);
 tol.abs = 1e-3;
 tol.rel = 1e-3;
@@ -99,7 +99,9 @@ beta = 3;
 quiet = true;
 tic;
 pentype = 'ball';
-[DVs,~,~,~,classMeans, ~] = PenZDA(train,D,tol,maxits,beta,quiet, pentype,gamscale);
+[DVs,~,~,~,classMeans, gamma] = PenZDA(train,D,tol,maxits,beta,quiet, pentype,gamscale);
+
+
              
 t0 = toc, % Stop timer after training is finished.
         
