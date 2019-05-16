@@ -1,7 +1,7 @@
-function [x,y,z,its, errtol] = SZVD_ADMM_S(R, N, RN, D, sols0,gamma, beta, tol, maxits, quiet)
+function [x,y,z,its] = penZDA_ADMM(R, N, RN, D, sols0,gamma, beta, tol, maxits, consttype, quiet)
 
 % Iteratively solves the problem
-%       min{-1/2*x'B'x + gamma p(y): l2(y) = 1, DNx = y}
+%       min{-1/2*x'B'x + gamma p(y): l2(x) <= 1, DNx = y}
 % using ADMM.
 %====================================================================
 % Input.
@@ -17,6 +17,7 @@ function [x,y,z,its, errtol] = SZVD_ADMM_S(R, N, RN, D, sols0,gamma, beta, tol, 
 %   tol:    tol.abs = absolute error, tol. rel = relative error to be
 %                   achieved to declare convergence of the algorithm.
 %   maxits: maximum number of iterations of the algorithm to run.
+%   consttype: constraint type.
 %   quiet: toggles between displaying intermediate statistics.
 %====================================================================
 % Output:.
@@ -33,6 +34,7 @@ function [x,y,z,its, errtol] = SZVD_ADMM_S(R, N, RN, D, sols0,gamma, beta, tol, 
 % Dimension of decision variables.
 p = size(D, 1);
 
+% Define d operators.
 % Define d operators.
 if isdiag(D)
     % Check if D = I
@@ -62,9 +64,9 @@ K= size(R, 1);
 x = sols0.x;
 Nx = N*x;
  % Take Cholesky of beta I - B (for use in update of x)
-%V=chol(eye(K)-1/beta*R*(N*N')*R','upper');
+V=chol(eye(K)-1/beta*(RN*RN'),'upper');
 %[V1,V2] = qr(eye(K)-1/beta*R*(N*N')*R');
-[P,L] = lu(eye(K)-1/beta*(RN*RN'));
+%[P,L] = lu(eye(K)-1/beta*(RN*RN'));
 
 
 %====================================================================
@@ -75,11 +77,15 @@ Nx = N*x;
 y = sols0.y;
 z = sols0.z;
 
+
+
 %====================================================================
 %% Call the algorithm.
 %====================================================================
 
 for iter=1:maxits    
+    % Record number of iterations performed.
+    its = iter;
     
     %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     % Step 1: Perform shrinkage to update y_k+1.
@@ -88,12 +94,38 @@ for iter=1:maxits
     % Save previous iterate.
     yold = y;
     
-    
-    
+    if isequal(consttype,'ball') % Shrink then normalize if norm >=1.
+        
+        % Call soft-thresholding.
+        y = vec_shrink(beta*Dx(Nx) + z, gamma);
+        
+        
+        % Normalize y (if necessary).
+        tmp = max(0, norm(y) - beta);
+        y = y/(beta + tmp);
+        
+    elseif isequal(consttype,'sphere') % Check if shrunk to 0, then shrink and normalize.
+        
+        % Calculate largest magnitude entry of b.
+        b = Dx(Nx) + z;
+        [mx, ix] = max(abs(b));
+        
+        % Update y.
+        if mx <= gamma  % all-zeros is optimal for ball-constrained problem.
+            % Set yix to be indicator for largest value.
+            y = zeros(p,1);
+            y(ix) = sign(b(ix));
+        else % all-zeros is suboptimal. Use soft-threshholding.
+            y = vec_shrink(b, gamma);
+            y = y/norm(y); % Normalize y (if necessary).
+        end
+        
+    else % ERROR.
+        error('Invalid constraint type. Please indicate if using inequality ("ball") or equality ("sphere") constraints.')
+    end
     
     % Truncate complex part (if have +0i terms appearing.)
     y = real(y);
-    
     %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     % Step 2: Update x_k+1 by solving
     % x_k+1 = argmin { -x'*A*x + beta/2 l2(x - y_k+1 + z_k)^2}
@@ -103,9 +135,12 @@ for iter=1:maxits
     b = N'*Dtx(beta*y - z);
     
     % K > 2.
-    % Update using by solving the system LL'x = b.
-    xtmp=P\(RN*b);
-    xtmp=L\(xtmp);
+    % Update using by solving the system V'V x = b.
+    xtmp=V'\(RN*b);
+    xtmp=V\(xtmp);
+%     xtmp = P\(RN*b);
+%     xtmp = L\xtmp;
+    
     x=1/beta*b+1/beta^2*RN'*xtmp;
     
     % Truncate complex part (if have +0i terms appearing.)
@@ -116,11 +151,12 @@ for iter=1:maxits
     % (according to the formula z_k+1 = z_k + beta*(N*x_k+1 - y_k+1) ).
     %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     %zold = z;
+    
     % Primal residual.
     Nx = N*x;
-    r = Dx(Nx) - y;    
+    r = Dx(Nx) - y;  
     
-    % Update z.
+    % Ascent step.
     z = real(z + beta*r);
     
     %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -130,7 +166,7 @@ for iter=1:maxits
     %----------------------------------------------------------------
     % Primal constraint violation.
     %----------------------------------------------------------------
-    
+      
     % l2 norm of the residual.
     dr = norm(r);
 	
@@ -153,7 +189,7 @@ for iter=1:maxits
     
     % Display current iteration stats.
     if (quiet==0 && mod(iter, 1) == 0)
-        fprintf('it = %g, primal_viol = %3.2e, dual_viol = %3.2e, norm_DV = %3.2e\n', iter, dr-ep, ds-es, norm(y))
+        fprintf('it = %g, primal_viol = %3.2e,  ep = %1.2e, dual_viol = %3.2e, es = %1.2e,  norm_DV = %3.2e\n', iter, dr,ep, ds,es, norm(y))
     end
     
     % Check if the residual norms are less than the given tolerance.
@@ -164,16 +200,6 @@ for iter=1:maxits
 end %for.
 
 
-%====================================================================
-% Output results.
-%====================================================================
 
-if maxits > 0
-    its = iter;
-    errtol = min(ep,es);
-else
-    its = 0;
-    errtol=0;
-end
 
 end

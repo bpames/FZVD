@@ -32,7 +32,7 @@ plot(res$beta, type = 'l')
 library(MASS)
 library(rARPACK)
 
-cmns <- penzda(Xt = Xtrain, Yt = Ytrain, maxits=15, tol = 1e-3, type ="ball")
+cmns <- penzda(Xt = Xtrain, Yt = Ytrain, maxits=15, tol = 1e-3, type ="sphere")
 cmns$DVs
 plot(cmns$DVs, type="l")
 
