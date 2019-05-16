@@ -129,7 +129,7 @@ for i=1:(K-1)
         % Update RN and initial solution.
         RN = R*N;
         [~,sigma,w]=svds(RN, 1, 'largest');
-        
+        RN = RN/sigma;
         R=R/sigma;
         % Set gamma.
         Nw = N*w;

@@ -126,11 +126,6 @@ penzda <- function(Xt, Yt, D = diag(p), tol=1e-3, maxits=1000, bta=3, quiet=FALS
   # Calculate discriminant vectors in sequence.
   for (i in 1:(k-1)){ # Calculate ith DV.
     
-    # # Calculate remaining initial solutions.
-    # sols0$x <- w
-    # sols0$z <- rep(0,p)
-    
-    
     # Call ADMM solver.
     ADMMres <- penzdaADMM(R=R, N=N, RN=RN, D=D, 
                           sols0=sols0, gam=gam[i], bta = bta, 
@@ -151,6 +146,41 @@ penzda <- function(Xt, Yt, D = diag(p), tol=1e-3, maxits=1000, bta=3, quiet=FALS
 
   }
   
+  # Update null-basis.
+  if (i < (k-1)){
+    # Extract vector to add to rows of W.
+    v <- DVs[,i]
+  
+    # Call Nupdate.
+    N <- Nupdate(N=N, v = v)
+    
+    # Update RN and initial solution.
+    RN <- R %*% N
+    
+    if(min(dim(RN)) <= 2){ # k or p <= 2
+      # Take SVD (keep first right singular vector)
+      SVDres <- svd(x=RN, nu=0, nv = 1)
+    }
+    else{ 
+      # Use Lanczos method to find dominant singular value/right vector.
+      SVDres <- svds(A = RN, k =1, nu = 0, nv =1)
+    }
+    
+    # Extract singular value/vector.
+    sig <- SVDres$d[1]
+    w <- SVDres$v[,1]
+    
+    Nw <- N %*% w
+    
+    # Normalize R.
+    R <- R/sig
+    RN <- RN/sig
+    
+    # Calculate next gamma.
+    gam[i+1] <- gamscale*norm(x=RN%*%w, type = "F")^2/norm(x=sols0$y, type="1")
+    
+  }
+    
   
   
   return(list(DVs = DVs, its = its, classmns = classMeans, k=k, labels=labs, gam = gam))
@@ -208,12 +238,8 @@ penzdaADMM <- function(R, N, RN, D = diag(p), sols0, gam, bta = 3,
   # Initialize x,y,z.
   x <- sols0$x
   Nx <- N%*%x
-  
-  print('Gamma')
-  print(gam)
-  
-  
-  
+
+  # Initialize y and z.
   y <- sols0$y
   z <- sols0$z
   
@@ -332,8 +358,6 @@ penzdaADMM <- function(R, N, RN, D = diag(p), sols0, gam, bta = 3,
   if (quiet == FALSE) {print('DONEZO! Didnt converge')}
 
 }
-
-
 
 #' Soft threshholding operator.
 #'
