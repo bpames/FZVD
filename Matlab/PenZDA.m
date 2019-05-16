@@ -94,7 +94,7 @@ for i=1:(K-1)
 %     end
 
     % Call ADMM solver.
-    [x,y,~,its] = penZDA_ADMM(R, N, RN, D, sols0,gamma, beta, tol, maxits, consttype, quiet);
+    [x,y,~,its] = penZDA_ADMM(R, N, RN, D, sols0,gamma(i), beta, tol, maxits, consttype, quiet);
     
     % Normalize y (if nonzero).
     if norm(y) > 1e-12 % Nonzero solution.

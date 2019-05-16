@@ -98,10 +98,10 @@ maxits = 100;
 beta = 3;
 quiet = false;
 tic;
-consttype = 'ball';
-[DVs,x, its, M, N,classMeans, gamma]=PenZDA(train,D, tol,maxits,beta,quiet, consttype,gamscale);
+consttype = 'sphere';
+[DVs2,x, its, M, N,classMeans, gamma]=PenZDA(train,D, tol,maxits,beta,quiet, consttype,gamscale);
 
-stats = predict(DVs, test, classMeans)   
+stats = predict(DVs2, test, classMeans)   
 
 plot(DVs2)
              
