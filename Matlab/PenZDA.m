@@ -1,4 +1,4 @@
-function [DVs,x, its,N,classMeans, gamma]=PenZDA(train,D, tol,maxits,beta,quiet, consttype,gamscale)
+function [DVs,x, its,b, M, N,classMeans, gamma]=PenZDA(train,D, tol,maxits,beta,quiet, consttype,gamscale)
 
 % tic
 classes=train(:,1);
@@ -78,7 +78,7 @@ for i=1:(K-1)
         
         % Call ball-constrained solver.
         
-        [x,y,~,its]=SZVD_ADMM_V2(R,N,RN, D,sols0,gamma(i),beta,tol,maxits,quiet);
+        [x,y,~,b,its]=SZVD_ADMM_V2(R,N,RN, D,sols0,gamma(i),beta,tol,maxits,quiet);
         
         % Normalize y, if necessary.
         DVs(:,i) = y/norm(y);
@@ -86,7 +86,7 @@ for i=1:(K-1)
     elseif isequal(consttype,'sphere')
         
         % Call spherical solver.
-        [x,DVs(:,i),~,its]=SZVD_ADMM_S(R,N,RN, D,sols0,gamma(i),beta,tol,maxits,quiet);
+        [x,DVs(:,i),~,b,its]=SZVD_ADMM_S(R,N,RN, D,sols0,gamma(i),beta,tol,maxits,quiet);
         
     else % ERROR. 
         error('Invalid constraint type. Please indicate if using inequality ("ball") or equality ("sphere") constraints.')

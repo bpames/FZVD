@@ -164,7 +164,7 @@ for iter=1:maxits
     
     % Display current iteration stats.
     if (quiet==0 && mod(iter, 1) == 0)
-        fprintf('it = %g, primal_viol = %3.2e, dual_viol = %3.2e, norm_DV = %3.2e\n', iter, dr-ep, ds-es, norm(y))
+        fprintf('it = %g, primal_viol = %3.2e,  ep = %1.2e, dual_viol = %3.2e, es = %1.2e,  norm_DV = %3.2e\n', iter, dr,ep, ds,es, norm(y))
     end
     
     % Check if the residual norms are less than the given tolerance.

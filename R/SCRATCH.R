@@ -32,11 +32,36 @@ plot(res$beta, type = 'l')
 library(MASS)
 library(rARPACK)
 
-cmns <- penzda(Xt = Xtrain, Yt = Ytrain, type ="sphere")
+cmns <- penzda(Xt = Xtrain, Yt = Ytrain, maxits=15, tol = 1e-3, type ="ball")
+cmns$DVs
+plot(cmns$DVs, type="l")
 
+penstats <- predict(obj = cmns, Xtest = Xtest, Ytest = Ytest)
 
 v  <- c(1, 2, -4)
 a <- 1.5
 
 s <- vecshrink(v,a)
+
+#++++++++++++++++++++++++++++++++
+x <- cmns$sols$x
+y <- cmns$sols$y
+z <- cmns$sols$z
+gamma <- cmns$gamma
+D <- diag(p)
+
+
+
+r <- rbind(c(1,2,3),
+           c(0,2,1),
+           c(0,0,2))
+
+prds <- max.col(r)
+r
+
+y <- backsolve(r, x <- c(8,4,2)) 
+
+r %*% y
+
+backsolve(r, x, transpose = TRUE)
 

@@ -26,10 +26,10 @@ for i=1:N
     end
 end
 %Label test_obs accoring to the closest centroid to its projection
-[~,predicted_labels]=min(dist, [], 2);
+[~,preds]=min(dist, [], 2);
 %Compute misclassed, l0 and l1 norms of the classifiers
 %Compute fraction of misclassified observations
-misclassed=sum(abs(test_labels-predicted_labels)>0)/N;
+misclassed=sum(abs(test_labels-preds)>0)/N;
 %l0
 A=(abs(w)>1e-3);
 sum(A);
@@ -40,7 +40,7 @@ l1=sum(abs(w));
 stats.mc=misclassed;
 stats.l0=l0;
 stats.l1=l1;
-preds=predicted_labels;
+
 
 
 
