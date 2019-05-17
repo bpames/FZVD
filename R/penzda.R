@@ -18,55 +18,63 @@ penzda <- function(Xt, Yt, D = diag(p), tol=1e-3, maxits=1000, bta=3, quiet=FALS
   stopifnot(exprs = {
     (type=="ball" | type=="sphere")
   } ) 
-  # Get data set dimensions.
-  n <- nrow(Xt)
-  p <- ncol(Xt)
+  # # Get data set dimensions.
+  # n <- nrow(Xt)
+  # p <- ncol(Xt)
+  # 
+  # # Get number of classes.
+  # k <- nlevels(Yt)
+  # print(x= k)
+  # 
+  # # Get class labels.
+  # labs <- levels(Yt)
+  # # Initialize classMeans.
+  # classMeans <- matrix(0, p, k)
+  # 
+  # # Initialize R.
+  # R <- matrix(0, k,p)
+  # 
   
-  # Get number of classes.
-  k <- nlevels(Yt)
-  print(x= k)
+  # 
+  # # Initialize W factor (M).
+  # M <- matrix(0, n, p)
+  # 
+  # #++++++++++++++++++++++++++++++++++++++++++
+  # # Make classMeans and M.
+  # for (i in 1:k){ # For each class.
+  #   print(x=i)
+  #   
+  #   # Extract training observations in class i.
+  #   classobs <- Xt[Yt == labs[i], ]
+  #   
+  #   # Get class-size
+  #   ni <- nrow(classobs)
+  #   
+  #   # Compute within-class mean.
+  #   classMeans[, i] <- colMeans(classobs)
+  #   
+  #   # Update W/M.
+  #   M[Yt == labs[i], ] <- classobs - rep(1, ni)%*%t(classMeans[,i])
+  #   
+  #   # Update R.
+  #   R[i,] <- sqrt(ni)*t(classMeans[,i])
+  #   
+  # } # END for i in 1:k
   
-  # Get class labels.
-  labs <- levels(Yt)
-  # Initialize classMeans.
-  classMeans <- matrix(0, p, k)
+  # Call calcClassMeans.
+  cmnsres <- calcClassMeans(Xt = Xt, Yt = Yt)
   
-  # Initialize R.
-  R <- matrix(0, k,p)
-  
-  # Initialize gam.
-  gam <- rep(0, k-1)
-  
-  # Initialize W factor (M).
-  M <- matrix(0, n, p)
-  
-  #++++++++++++++++++++++++++++++++++++++++++
-  # Make classMeans and M.
-  for (i in 1:k){ # For each class.
-    print(x=i)
-    
-    # Extract training observations in class i.
-    classobs <- Xt[Yt == labs[i], ]
-    
-    # Get class-size
-    ni <- nrow(classobs)
-    
-    # Compute within-class mean.
-    classMeans[, i] <- colMeans(classobs)
-    
-    # Update W/M.
-    M[Yt == labs[i], ] <- classobs - rep(1, ni)%*%t(classMeans[,i])
-    
-    # Update R.
-    R[i,] <- sqrt(ni)*t(classMeans[,i])
-    
-  } # END for i in 1:k
+  classMeans <- cmnsres$classMeans
+  M <- cmnsres$M
+  R <- cmnsres$R
+  k <- cmnsres$k
   
   # Find null basis.
+  print(typeof(M))
   N <- Null(t(M))
-  #N <- Null(M)
-  print('Check null space')
-  print(norm(M%*%N))
+  # #N <- Null(M)
+  # print('Check null space')
+  # print(norm(M%*%N))
   
   # print(dim(M))
   # print(dim(N))
@@ -115,6 +123,9 @@ penzda <- function(Xt, Yt, D = diag(p), tol=1e-3, maxits=1000, bta=3, quiet=FALS
   # Initialize discriminant vectors.
   DVs <- matrix(0,p,k-1)
   its <- rep(0, k-1)
+  
+  # Initialize gam.
+  gam <- rep(0, k-1)
   
   # Calculate discriminant vectors in sequence.
   for (i in 1:(k-1)){ # Calculate ith DV.
@@ -184,7 +195,7 @@ penzda <- function(Xt, Yt, D = diag(p), tol=1e-3, maxits=1000, bta=3, quiet=FALS
   }
   
   # Output.
-  return(list(DVs = DVs, its = its, classmns = classMeans, k=k, labels=labs, gam = gam))
+  return(list(DVs = DVs, its = its, classmns = classMeans, k=k, gam = gam))
 
 }
 
@@ -238,7 +249,7 @@ penzdaADMM <- function(R, N, RN, D = diag(p), sols0, gam, bta = 3,
   
   # Initialize x,y,z.
   x <- sols0$x
-  Nx <- N%*%x
+  Nx <- N %*% x
 
   # Initialize y and z.
   y <- sols0$y
@@ -450,4 +461,67 @@ Nupdate <- function(N,v){
   # Output.
   return(N1)
   
+}
+
+#' calcClassMeans - calculates class-means and factorization of between/within-class covariance matrices for use in penzda.
+#' 
+#' @param Xt training data set (as matrix)
+#' @param Yt factor containing labels of training data.
+#' @param D dictionary matrix.
+#' @param tol stopping tolerance for ADMM scheme.
+#' @param maxits maximum number of iterations performed by ADMM.
+#' @param bta augmented Lagrangian penalty term.
+#' @param quiet density outside planted submatrix
+#' @param type constraint type: "ball" or "sphere".
+#' @param gamscale scaling parameter controlling sparsity.
+#' @return DVs discriminant vectors corresponding to the optimal solution, classMeans for purpose of prediction.
+#' @export
+#' 
+calcClassMeans <- function(Xt, Yt){
+  
+  # Get data set dimensions.
+  n <- nrow(Xt)
+  p <- ncol(Xt)
+  
+  # Get number of classes.
+  k <- nlevels(Yt)
+  print(x= k)
+  
+  # Get class labels.
+  labs <- levels(Yt)
+  # Initialize classMeans.
+  classMeans <- matrix(0, p, k)
+  
+  # Initialize R.
+  R <- matrix(0, k,p)
+  
+  # Initialize gam.
+  gam <- rep(0, k-1)
+  
+  # Initialize W factor (M).
+  M <- matrix(0, n, p)
+  
+  #++++++++++++++++++++++++++++++++++++++++++
+  # Make classMeans and M.
+  for (i in 1:k){ # For each class.
+    print(x=i)
+    
+    # Extract training observations in class i.
+    classobs <- Xt[Yt == labs[i], ]
+    
+    # Get class-size
+    ni <- nrow(classobs)
+    
+    # Compute within-class mean.
+    classMeans[, i] <- colMeans(classobs)
+    
+    # Update W/M.
+    M[Yt == labs[i], ] <- classobs - rep(1, ni)%*%t(classMeans[,i])
+    
+    # Update R.
+    R[i,] <- sqrt(ni)*t(classMeans[,i])
+    
+  } # END for i in 1:k
+  
+  return(list(classMeans = classMeans, k = k, M = M, R = R))
 }
