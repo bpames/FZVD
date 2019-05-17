@@ -33,12 +33,12 @@ plot(res$beta, type = 'l')
 library(MASS)
 library(rARPACK)
 
-cmns <- penzda(Xt = Xtrain, Yt = Ytrain, maxits=50, tol = 1e-3, type ="ball")
-cmns$DVs
-plot(cmns$DVs[,1], type="l")
+cmns2 <- penzda(Xt = Xtrain, Yt = Ytrain, maxits=50, tol = 1e-3, type ="ball")
+cmns2$DVs
+plot(cmns2$DVs[,1], type="l")
 
-penstats <- predict(obj = cmns, Xtest = Xtest, Ytest = Ytest)
-
+penstats2 <- predict(obj = cmns2, Xtest = Xtest, Ytest = Ytest)
+penstats2$mc
 cbind(penstats$preds, Ytest, penstats$dist)
 
 v  <- c(1, 2, -4)

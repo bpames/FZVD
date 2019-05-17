@@ -298,17 +298,18 @@ penzdaADMM <- function(R, N, RN, D = diag(p), sols0, gam, bta = 3,
     
     xold <- x
     # Update right-hand side.
+    print('Dimension N')
     print(dim(N))
     b <- t(N) %*% Dtx(bta*y - z)
     
     # Update using the SMW identity.
-    # xtmp <- forwardsolve(l = t(V), x = RN %*% b)
-    # xtmp <- backsolve(r = V, x = xtmp)
-    # x <- 1/bta * b + 1/bta^2 * t(RN) %*% xtmp
+    xtmp <- forwardsolve(l = t(V), x = RN %*% b)
+    xtmp <- backsolve(r = V, x = xtmp)
+    x <- 1/bta * b + 1/bta^2 * t(RN) %*% xtmp
     print("Length x")
      print(length(x))
     # print(dim(RN))
-    x <- solve(a = (bta*diag(length(x)) - (t(RN) %*% RN)), b= b)
+    # x <- solve(a = (bta*diag(length(x)) - (t(RN) %*% RN)), b= b)
     
     print(norm(x - xold, type= "F"))
     
