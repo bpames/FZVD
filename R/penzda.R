@@ -112,19 +112,19 @@ penzda <- function(Xt, Yt, D = diag(p), tol=1e-3, maxits=1000, bta=3, quiet=FALS
     Dx <- function(x){return(D%*%x)}
   }
   
-  
-  # Initialize variables.
-  sols0 = list(x=w, y=Dx(Nw), z=rep(0, p))
-  
-  # Initialize gam.
-  gam[1] <- gamscale*norm(x=RN%*%w, type = "F")^2/norm(x=sols0$y, type="1")
-  
   # Initialize discriminant vectors.
   DVs <- matrix(0,p,k-1)
   its <- rep(0, k-1)
   
   # Calculate discriminant vectors in sequence.
   for (i in 1:(k-1)){ # Calculate ith DV.
+    
+    # Initialize variables.
+    sols0 = list(x=w, y=Dx(Nw), z=rep(0, p))
+    
+    # Initialize gam.
+    gam[i] <- gamscale*norm(x=RN%*%w, type = "F")^2/norm(x=sols0$y, type="1")
+    
     
     # Call ADMM solver.
     ADMMres <- penzdaADMM(R=R, N=N, RN=RN, D=D, 
@@ -175,8 +175,9 @@ penzda <- function(Xt, Yt, D = diag(p), tol=1e-3, maxits=1000, bta=3, quiet=FALS
       R <- R/sig
       RN <- RN/sig
       
-      # Calculate next gamma.
-      gam[i+1] <- gamscale*norm(x=RN%*%w, type = "F")^2/norm(x=sols0$y, type="1")
+      # # Calculate next gamma.
+
+            # gam[i+1] <- gamscale*norm(x=RN%*%w, type = "F")^2/norm(x=sols0$y, type="1")
       
     }
 
