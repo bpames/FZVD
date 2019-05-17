@@ -20,38 +20,42 @@ function [val_w, DVs, gamma, best_ind, val_score, classMeans] = PenZDAval(train,
 % classMeans: set of training data class means.
 
 % Initialize classMeans of training data and get number of classes.
-classes=train(:,1);
+% classes=train(:,1);
 [n,p]=size(train);
-X=train(:,2:p);
-%X=normalize(X);
-%Extract observations 
-labels=unique(classes); 
-K=length(labels);
-%Initiate matrix of within-class means
-p=p-1;
-classMeans=zeros(p,K);
-R=zeros(K,p);
+p = p-1;
+% X=train(:,2:p);
+% %X=normalize(X);
+% %Extract observations 
+% labels=unique(classes); 
+% K=length(labels);
+% %Initiate matrix of within-class means
+% p=p-1;
+% classMeans=zeros(p,K);
+% R=zeros(K,p);
+% 
+% %for each class, make an object in the list containing only the obs of that
+% %class and update the between and within-class sample
+% M=zeros(p,n);
+% 
+% 
+% % Calculate scaled classMeans for calculating R and N in objective function.
+% for i=1:K    
+%     class_obs=X(classes==labels(i),:);
+%     %Get the number of obs in that class (the number of rows)
+%     ni=size(class_obs,1);
+%     %Compute within-class mean
+%     classMeans(:,i)=mean(class_obs);
+%     %Update W 
+%     xj=class_obs-ones(ni,1)*classMeans(:,i)';
+%     M(:,classes == labels(i)) =xj';
+%     R(i,:)= sqrt(ni)*mean(class_obs)';
+% end
 
-%for each class, make an object in the list containing only the obs of that
-%class and update the between and within-class sample
-M=zeros(p,n);
-
-
-% Calculate scaled classMeans for calculating R and N in objective function.
-for i=1:K    
-    class_obs=X(classes==labels(i),:);
-    %Get the number of obs in that class (the number of rows)
-    ni=size(class_obs,1);
-    %Compute within-class mean
-    classMeans(:,i)=mean(class_obs);
-    %Update W 
-    xj=class_obs-ones(ni,1)*classMeans(:,i)';
-    M(:,classes == labels(i)) =xj';
-    R(i,:)= sqrt(ni)*mean(class_obs)';
-end
+% Call calcClassMeans to compute class-means and covariance matrices.
+[classMeans, K, M, R]=calcClassMeans(train);
 
 % Calculate null basis.
-N=null(M');
+N=null(M);
 
 %Compute leading eigenvector of N'*B*N
 RN = R*N;
@@ -61,6 +65,7 @@ RN = R*N;
 R=R/sigma;
 RN = RN/sigma;
 RN0 = RN;
+Nw = N*w;
 
 % Define d operators.
 if isdiag(D)
@@ -97,7 +102,7 @@ its=zeros(num_gammas,1);
 
 %For each gamma, calculate ZVDs and corresponding validation score
 gammas=zeros(num_gammas, K-1);
-gmax = norm(RN*w,2)^2/norm(Dx(N*w), 1); 
+gmax = norm(RN*w,2)^2/norm(Dx(Nw), 1); 
 
 
 %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -121,7 +126,7 @@ for i=1:num_gammas
         % Initial solutions.
         if i == 1
             sols0.x = w;
-            sols0.y = Dx(N*sols0.x);
+            sols0.y = Dx(Nw);
             sols0.z = zeros(p,1);
         else
             sols0.y = DVs(:,j,i-1); % Warm-start with previous DV.
@@ -172,7 +177,7 @@ for i=1:num_gammas
     [stats,~,~,~]=predict(DVs(:,:,i), val, classMeans);%%%%%%%%%%%%%
     
     %If gamma gives trivial sol, give it a large penalty
-    if (min(stats.l0)<3)
+    if (min(stats.l0)<1)
         val_score(i)=(p+1)*size(val,1);
         triv=1;
     else
@@ -182,11 +187,13 @@ for i=1:num_gammas
             val_score(i)=stats.mc;
         end
     end
+    
     %Update the best gamma so far
     if (val_score(i)<=val_score(best_ind))
         best_ind=i;
     end
-    %Record sparest nontrivial sol 
+    
+    %Record sparest nontrivial sol
     %if (min(stats.l0)>3 && stats.l0<min_l0)
     %    l0_ind=1;
     %    l0_x=DVs(:,:,i);
@@ -199,6 +206,7 @@ for i=1:num_gammas
     %    min_mc=stats.mc;
     %end
     %Terminate if a trivial solution has been found
+    
     if (quiet==false)
        if (i==1) 
            fprintf('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n')
