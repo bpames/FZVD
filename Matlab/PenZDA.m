@@ -1,35 +1,40 @@
 function [DVs,x, its, M, N,classMeans, gamma]=PenZDA(train,D, tol,maxits,beta,quiet, consttype,gamscale)
 
-% tic
-classes=train(:,1);
-[n,p]=size(train);
-X=train(:,2:p);
-%X=normalize(X);
-%Extract observations 
-labels=unique(classes); 
-K=length(labels);
-%Initiate matrix of within-class means
-p=p-1;
-classMeans=zeros(p,K);
-R=zeros(K,p);
+% % tic
+% classes=train(:,1);
+[~,p]=size(train);
+p = p-1;
+% X=train(:,2:p);
+% %X=normalize(X);
+% %Extract observations 
+% labels=unique(classes); 
+% K=length(labels);
+% %Initiate matrix of within-class means
+% p=p-1;
+% classMeans=zeros(p,K);
+% R=zeros(K,p);
+% 
+% 
+% %for each class, make an object in the list containing only the obs of that
+% %class and update the between and within-class sample
+% M=zeros(n,p);
+% 
+% for i=1:K    
+%     class_obs=X(classes==labels(i),:);
+%     %Get the number of obs in that class (the number of rows)
+%     ni=size(class_obs,1);
+%     %Compute within-class mean
+%     classMeans(:,i)=mean(class_obs);
+%     %Update W and R.
+%     M(classes == labels(i),:) =class_obs-ones(ni,1)*classMeans(:,i)';
+%     R(i,:)= sqrt(ni)*classMeans(:,i)';
+% end
+
+% Call calcClassMeans to compute class-means and covariance matrices.
+[classMeans, K, M, R]=calcClassMeans(train);
 
 % Initialize gamma.
 gamma = zeros(K-1,1);
-
-%for each class, make an object in the list containing only the obs of that
-%class and update the between and within-class sample
-M=zeros(n,p);
-
-for i=1:K    
-    class_obs=X(classes==labels(i),:);
-    %Get the number of obs in that class (the number of rows)
-    ni=size(class_obs,1);
-    %Compute within-class mean
-    classMeans(:,i)=mean(class_obs);
-    %Update W and R.
-    M(classes == labels(i),:) =class_obs-ones(ni,1)*classMeans(:,i)';
-    R(i,:)= sqrt(ni)*classMeans(:,i)';
-end
 
 %Find null basis. 
 N=null(M);

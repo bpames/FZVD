@@ -3,9 +3,9 @@
 %% Load data.
 clc
 clear
-load('OOdata (normalized).mat')
+%load('OOdata (normalized).mat')
 %load('Coffee-normalized.mat')
-%  load('ECGdata (normalized).mat')
+load('ECGdata (normalized).mat')
 [n,p] = size(train);
 p = p-1;
 
