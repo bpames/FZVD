@@ -525,3 +525,34 @@ calcClassMeans <- function(Xt, Yt){
   
   return(list(classMeans = classMeans, k = k, M = M, R = R))
 }
+
+
+#' PENZDAVAL - PENalized Zero-variance Discriminant Analysis with Validation.
+#'
+#' @param Xt training data set (as matrix)
+#' @param Yt factor containing labels of training data.
+#' @param Xval validation data set (as matrix)
+#' @param Yval factor containing labels of validation data.
+#' @param D dictionary matrix.
+#' @param gmults vector of multipliers defining potential regularization parameter values.
+#' @param sparsity_level desired minimum sparsity level for validation scoring.
+#' @param tol stopping tolerance for ADMM scheme.
+#' @param maxits maximum number of iterations performed by ADMM.
+#' @param bta augmented Lagrangian penalty term.
+#' @param quiet true suppresses display of intermediate outputs.
+#' @param type constraint type: "ball" or "sphere".
+#' @return val_w discriminant vectors corresponding to best parameter.
+#' @return DVs set of all discriminant vectors calculated.
+#' @return gamma optimal regularization parameter choice.
+#' @return bestind position of multiplier corresponding to best gamma.
+#' @return valscores array of validation scores.
+#' @return classMeans set of training data class-means.
+#' @export
+
+penzdaVAL <- function(Xt, Yt, Xval, Yval, 
+                      D = diag(p), gmults, sparsity_level = 0.25,
+                      tol=1e-3, maxits=1000, bta=3, 
+                      quiet=FALSE, type="ball")
+{
+  
+}
