@@ -10,41 +10,41 @@ load('ECGdata (normalized).mat')
 p = p-1;
 
 
-% %% Split testing data as validation and testing set.
-% valratio = 0.35; % Extract this fraction for validation set.
-% [val, test] = train_test_split(test, valratio);
-% 
-% 
-% 
-% %%
-% %prepare the data set
-% gmults = linspace(0, 1.5, 15);
-% beta=2;
-% tol.rel = 1e-3;
-% tol.abs= 1e-3;
-% maxits= 1000;
-% quiet=false;
-% 
-% consttype = 'ball';
-% consttype = 'sphere';
-% 
-% sparsity_level = 0.25;
-% 
-% D = eye(p);
-% 
-% %% Call validation set.
-% [val_w, DVs, gamma, best_ind, val_score, classMeans] = PenZDAval(train, val,D, gmults, consttype, sparsity_level, beta, tol, maxits,quiet);
-% gamma, best_ind
-% 
-% stats = predict(val_w, test, classMeans)
-% 
-% % Plot DVs.
-% [~,K] = size(classMeans);
-% for i = 1:K-1
-%     figure
-%     plot(1:p, val_w(:,i))
-% end
-% 
+%% Split testing data as validation and testing set.
+valratio = 0.35; % Extract this fraction for validation set.
+[val, test] = train_test_split(test, valratio);
+
+
+
+%%
+%prepare the data set
+gmults = linspace(0, 1.5, 15);
+beta=2;
+tol.rel = 1e-3;
+tol.abs= 1e-3;
+maxits= 1000;
+quiet=false;
+
+consttype = 'ball';
+consttype = 'sphere';
+
+sparsity_level = 0.25;
+
+D = eye(p);
+
+%% Call validation set.
+[val_w, DVs, gamma, best_ind, val_score, classMeans] = PenZDAval(train, val,D, gmults, consttype, sparsity_level, beta, tol, maxits,quiet);
+gamma, best_ind
+
+stats = predict(val_w, test, classMeans)
+
+% Plot DVs.
+[~,K] = size(classMeans);
+for i = 1:K-1
+    figure
+    plot(1:p, val_w(:,i))
+end
+
 % %% Try cross-validation.
 % 
 % nfolds = 10;

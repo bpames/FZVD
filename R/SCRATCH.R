@@ -37,6 +37,10 @@ cmns <- penzda(Xt = Xtrain, Yt = Ytrain, maxits=50, tol = 1e-3, type ="ball")
 cmns$DVs
 plot(cmns$DVs[,1], type="l")
 
+
+
+res <- penzdaVAL(Xt = Xtrain, Yt = Ytrain, )
+
 penstats <- predict(obj = cmns, Xtest = Xtest, Ytest = Ytest)
 penstats$mc
 cbind(penstats$preds, Ytest, penstats$dist)
