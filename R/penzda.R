@@ -18,48 +18,6 @@ penzda <- function(Xt, Yt, D = diag(p), tol=1e-3, maxits=1000, bta=3, quiet=FALS
   stopifnot(exprs = {
     (type=="ball" | type=="sphere")
   } ) 
-  # # Get data set dimensions.
-  # n <- nrow(Xt)
-  # p <- ncol(Xt)
-  # 
-  # # Get number of classes.
-  # k <- nlevels(Yt)
-  # print(x= k)
-  # 
-  # # Get class labels.
-  # labs <- levels(Yt)
-  # # Initialize classMeans.
-  # classMeans <- matrix(0, p, k)
-  # 
-  # # Initialize R.
-  # R <- matrix(0, k,p)
-  # 
-  
-  # 
-  # # Initialize W factor (M).
-  # M <- matrix(0, n, p)
-  # 
-  # #++++++++++++++++++++++++++++++++++++++++++
-  # # Make classMeans and M.
-  # for (i in 1:k){ # For each class.
-  #   print(x=i)
-  #   
-  #   # Extract training observations in class i.
-  #   classobs <- Xt[Yt == labs[i], ]
-  #   
-  #   # Get class-size
-  #   ni <- nrow(classobs)
-  #   
-  #   # Compute within-class mean.
-  #   classMeans[, i] <- colMeans(classobs)
-  #   
-  #   # Update W/M.
-  #   M[Yt == labs[i], ] <- classobs - rep(1, ni)%*%t(classMeans[,i])
-  #   
-  #   # Update R.
-  #   R[i,] <- sqrt(ni)*t(classMeans[,i])
-  #   
-  # } # END for i in 1:k
   
   # Call calcClassMeans.
   cmnsres <- calcClassMeans(Xt = Xt, Yt = Yt)
@@ -70,16 +28,8 @@ penzda <- function(Xt, Yt, D = diag(p), tol=1e-3, maxits=1000, bta=3, quiet=FALS
   k <- cmnsres$k
   
   # Find null basis.
-  print(typeof(M))
   N <- Null(t(M))
-  # #N <- Null(M)
-  # print('Check null space')
-  # print(norm(M%*%N))
   
-  # print(dim(M))
-  # print(dim(N))
-  # print(norm(t(M)%*%N) )
-  # 
   # Compute leading eigenvector of N'*R'*R*N.
   RN <- R%*%N
   print(dim(RN))
@@ -96,7 +46,6 @@ penzda <- function(Xt, Yt, D = diag(p), tol=1e-3, maxits=1000, bta=3, quiet=FALS
   # Extract singular value/vector.
   sig <- SVDres$d[1]
   w <- SVDres$v[,1]
-  
   Nw <- N %*% w
   
   # Normalize R.
@@ -104,9 +53,10 @@ penzda <- function(Xt, Yt, D = diag(p), tol=1e-3, maxits=1000, bta=3, quiet=FALS
   RN <- RN/sig
   
   # Define d operators.
-  if (norm(x= (diag(diag(D)) - D), type='F') < 1e-12){
-    print('D is diagonal')
+  if (norm(x= (diag(diag(D)) - D), type='F') < 1e-12){ # D is diagonal
+    
     d <- diag(D) # Extract diagonal of D.
+    
     if (norm(x= as.matrix(d - rep(1,p)), type='F') < 1e-12){ # D = I.
       print('D is identity')
       Dx <- function(x){return(x)}
@@ -122,6 +72,7 @@ penzda <- function(Xt, Yt, D = diag(p), tol=1e-3, maxits=1000, bta=3, quiet=FALS
   
   # Initialize discriminant vectors.
   DVs <- matrix(0,p,k-1)
+  print(k-1)
   its <- rep(0, k-1)
   
   # Initialize gam.
@@ -134,7 +85,7 @@ penzda <- function(Xt, Yt, D = diag(p), tol=1e-3, maxits=1000, bta=3, quiet=FALS
     sols0 = list(x=w, y=Dx(Nw), z=rep(0, p))
     
     # Initialize gam.
-    gam[i] <- gamscale*norm(x=RN%*%w, type = "F")^2/norm(x=sols0$y, type="1")
+    gam[i] <- gamscale*norm(x=RN%*%w, type = "F")^2/(2*norm(x=sols0$y, type="1"))
     
     
     # Call ADMM solver.
@@ -143,10 +94,8 @@ penzda <- function(Xt, Yt, D = diag(p), tol=1e-3, maxits=1000, bta=3, quiet=FALS
                           tol = tol, maxits = maxits, 
                           type = type, quiet = quiet)
     
-    print(norm(ADMMres$y, type= "F"))
     # Save discriminant vector.
     if (norm(ADMMres$y)>1e-12){ # Normalize if not 0 vector.
-      print('Nonzero solution')
       DVs[,i] <- ADMMres$y/norm(x=ADMMres$y, type="F")
     }
     else{print('Converged to zero')}
@@ -157,7 +106,7 @@ penzda <- function(Xt, Yt, D = diag(p), tol=1e-3, maxits=1000, bta=3, quiet=FALS
     
     # Update null-basis.
     if (i < (k-1)){
-      print('Updating N')
+
       # Extract vector to add to rows of W.
       v <- DVs[,i]
       
@@ -185,17 +134,13 @@ penzda <- function(Xt, Yt, D = diag(p), tol=1e-3, maxits=1000, bta=3, quiet=FALS
       # Normalize R.
       R <- R/sig
       RN <- RN/sig
-      
-      # # Calculate next gamma.
 
-            # gam[i+1] <- gamscale*norm(x=RN%*%w, type = "F")^2/norm(x=sols0$y, type="1")
-      
     }
 
   }
   
   # Output.
-  return(list(DVs = DVs, its = its, classmns = classMeans, k=k, gam = gam))
+  return(list(DVs = DVs, its = its, classMeans = classMeans, k=k, gam = gam))
 
 }
 
@@ -265,9 +210,6 @@ penzdaADMM <- function(R, N, RN, D = diag(p), sols0, gam, bta = 3,
     
     # Update iteration count.
     its <- iter
-    print('Iteration')
-    print(its)
-          
     
     #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     # Update y using soft-thresholding.
@@ -293,13 +235,12 @@ penzdaADMM <- function(R, N, RN, D = diag(p), sols0, gam, bta = 3,
       if (mx <= gam){ # shrinks to 0. Set y to have cardinality 1.
         y <- rep(0,p)
         ix <- which.max(abs(b))
-        y[ix] <- sign(b(ix))
+        y[ix] <- sign(b[ix])
       }
       else{ # Otherwise shrink then normalize.
         y <- vecshrink(v = b, a= gam)
         y <- y/norm(x=y, type = "F")
       }
-      
     }
     
     
@@ -307,29 +248,22 @@ penzdaADMM <- function(R, N, RN, D = diag(p), sols0, gam, bta = 3,
     # Update x by solution of linear system of optimality conditions.
     #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     
+    # Save previous iterate
     xold <- x
+    
     # Update right-hand side.
-    print('Dimension N')
-    print(dim(N))
     b <- t(N) %*% Dtx(bta*y - z)
     
     # Update using the SMW identity.
     xtmp <- forwardsolve(l = t(V), x = RN %*% b)
     xtmp <- backsolve(r = V, x = xtmp)
     x <- 1/bta * b + 1/bta^2 * t(RN) %*% xtmp
-    print("Length x")
-     print(length(x))
-    # print(dim(RN))
-    # x <- solve(a = (bta*diag(length(x)) - (t(RN) %*% RN)), b= b)
-    
-    print(norm(x - xold, type= "F"))
     
     #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     # Update z by dual ascent.
     #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     
     # Calculate primal feasibility residual.
-    
     Nx <- N %*% x
     r <- Dx(Nx) - y
     
@@ -348,14 +282,13 @@ penzdaADMM <- function(R, N, RN, D = diag(p), sols0, gam, bta = 3,
     dr = norm(x = r, type = "F")
     
     # Compute absolute and relative tolerances.
-    ep = tol * (sqrt(p) + max(norm(x), norm(y)) )
-    es = tol * (sqrt(p) + norm(y))
+    ep = tol * (sqrt(p) + max(norm(x, type="F"), norm(as.matrix(y),type="F")) )
+    es = tol * (sqrt(p) + norm(as.matrix(y), type="F"))
     
     # Check for convergence.
     if(dr < ep && ds < es) {
       if (quiet == FALSE) {
         print('DONEZO! Converged.')
-        print(c(its, dr, ep, ds, es))
       }
       
       # Output optimal solution.
@@ -368,8 +301,9 @@ penzdaADMM <- function(R, N, RN, D = diag(p), sols0, gam, bta = 3,
   # For loop terminates after maximum number of iterations.
   # Output solution after maximum number of iterations.
   # print(c(its, dr, ep, ds, es))
-  return(list(x=x, y=y, z=z, b=b, its=its))
   if (quiet == FALSE) {print('DONEZO! Didnt converge')}
+  return(list(x=x, y=y, z=z, b=b, its=its))
+  
 
 }
 
@@ -398,22 +332,23 @@ vecshrink <- function(v,a){
 predict <- function(obj, Xtest, Ytest){
   
   # Get number of test observations.
-  N <- nrow(Xtest)
+  n <- nrow(Xtest)
+  p <- ncol(Xtest)
   
   # Number of classes in test data.
   #k <- nlevels(Ytest)
   
   # Project the test data onto the space spanned by the discriminant vectors contained in obj.
-  proj <- t(obj$DVs) %*% t(Xtest)
+  proj <- t(as.matrix(obj$DVs)) %*% t(Xtest)
   
   # Compute the centroids of the projected training data.
-  cent <- t(obj$DVs) %*% obj$classmns
+  cent <- t(as.matrix(obj$DVs)) %*% as.matrix(obj$classMeans)
   
   # Initialize matrix of distances to class-means
-  dist <- matrix(0, N, obj$k)
+  dist <- matrix(0, n, obj$k)
   
   # Calculate distances to centroids of projected test observations.
-  for (i in 1:N){
+  for (i in 1:n){
     for (j in 1:obj$k){
       dist[i,j] <- norm(x = as.matrix(proj[,i] - cent[,j]), type="F")
     }
@@ -423,10 +358,11 @@ predict <- function(obj, Xtest, Ytest){
   preds <- max.col(-dist)
   
   # Calculate misclassification rate.
-  mcrate <- sum(Ytest != preds)/N
-  
+  mcrate <- sum(Ytest!=as.factor(preds))/n
+
   # Count number of nonzero entries.
-  l0 <- sum(colSums(obj$DVs != 0))
+  l0 <- sum(colSums(obj$DVs != matrix(0, nrow = nrow(as.matrix(obj$DVs)), 
+                                      ncol = ncol(as.matrix(obj$DVs)))))
   # l0 <- sum(apply(obj$DVs, 2, function(c) sum(c!=0) ) )
   
   # Output.
@@ -456,8 +392,6 @@ Nupdate <- function(N,v){
   # Calculate N1 using Householder reflection.
   N1 <- N[, 2:d] - 2* (N %*% x) %*% t(x[2:d])
   
-  print('Updated N. New dimensions are:')
-  print(dim(N1))
   # Output.
   return(N1)
   
@@ -485,8 +419,7 @@ calcClassMeans <- function(Xt, Yt){
   
   # Get number of classes.
   k <- nlevels(Yt)
-  print(x= k)
-  
+
   # Get class labels.
   labs <- levels(Yt)
   # Initialize classMeans.
@@ -494,6 +427,7 @@ calcClassMeans <- function(Xt, Yt){
   
   # Initialize R.
   R <- matrix(0, k,p)
+
   
   # Initialize gam.
   gam <- rep(0, k-1)
@@ -504,8 +438,7 @@ calcClassMeans <- function(Xt, Yt){
   #++++++++++++++++++++++++++++++++++++++++++
   # Make classMeans and M.
   for (i in 1:k){ # For each class.
-    print(x=i)
-    
+
     # Extract training observations in class i.
     classobs <- Xt[Yt == labs[i], ]
     
@@ -566,22 +499,13 @@ penzdaVAL <- function(Xt, Yt, Xval, Yval,
   M <- cmnsres$M
   R <- cmnsres$R
   k <- cmnsres$k
-  
+
   # Find null basis.
-  print(typeof(M))
   N <- Null(t(M))
-  # #N <- Null(M)
-  # print('Check null space')
-  # print(norm(M%*%N))
-  
-  # print(dim(M))
-  # print(dim(N))
-  # print(norm(t(M)%*%N) )
-  # 
-  # Compute leading eigenvector of N'*R'*R*N.
+
+  # Form factor of objective matrix.
   RN <- R%*%N
-  print(dim(RN))
-  
+
   if(min(dim(RN)) <= 2){ # k or p <= 2
     # Take SVD (keep first right singular vector)
     SVDres <- svd(x=RN, nu=0, nv = 1)
@@ -602,20 +526,22 @@ penzdaVAL <- function(Xt, Yt, Xval, Yval,
   RN <- RN/sig
   
   # Define d operators.
-  if (norm(x= (diag(diag(D)) - D), type='F') < 1e-12){
-    print('D is diagonal')
+  if (norm(x= (diag(diag(D)) - D), type='F') < 1e-12){ # D is diagonal.
+    
     d <- diag(D) # Extract diagonal of D.
+    
     if (norm(x= as.matrix(d - rep(1,p)), type='F') < 1e-12){ # D = I.
-      print('D is identity')
       Dx <- function(x){return(x)}
+      Dtx <- function(x){return(x)}
     }
     else{ # D is diagonal, but not identity.
       Dx <- function(x){return(d*x)}
+      Dtx <- function(x){return(d*x)}
     }
   }
   else{ # treat D as arbitrary matrix.
-    print('D is not diagonal')
     Dx <- function(x){return(D%*%x)}
+    Dtx <- function(x){return(t(D)%*%x)}
   }
   
   # Initialize scores.
@@ -631,9 +557,9 @@ penzdaVAL <- function(Xt, Yt, Xval, Yval,
   DVs <- array(0,c(p,k-1, numgams))
   its <- matrix(0, k-1, numgams)
   
-  # For each gamma, calculate ZVDs and corresponding validation score.
-  gammas <- matrix(0, numgams, K-1);
-  gmax <- norm(RN*w,2)^2/norm(Dx(Nw), 1); 
+  # Initialize gammas.
+  gammas <- matrix(0, numgams, k-1);
+  gmax <- norm(RN %*% w,type = 'F')^2/(2*norm(Dx(Nw), type='1')); 
   
   # CALCULATE SETS OF DISCRIMINANT VECTORS AND VALIDATE.
   for (i in 1:numgams){
@@ -642,32 +568,30 @@ penzdaVAL <- function(Xt, Yt, Xval, Yval,
     N <- N0
     RN <- RN0
     
-    # Initialize 1st gamma.
-    gammas[, 1] <- gmults[i]*gmax
-    
     # Calculate each discriminant vector corresponding to gmult[i]
-    for (j in 1:(K-1)){
+    for (j in 1:(k-1)){
       
       # Calculate initial solutions.
       if (i == 1){ # First discriminant vector.
-        sols0 = list(x = w, y = Dx(Nw), z = rep(0,p))
+        sols0 = list(x = w, y = Dx(N %*%w), z = rep(0,p))
       } # end if i =1.
       else{ # warm-start with last discriminant vector found for this multiplier.
-        sols0 = list(x = t(N) %*% Dtx(DVs[,j, i-1]),
-                     y = DVs[,j, i-1], 
+        sols0 = list(x = t(N) %*% Dtx(as.matrix(DVs[,j, i-1])),
+                     y = as.matrix(DVs[,j, i-1]), 
                      z = rep(0,p))
       } # end else
       
+      # Choose gamma.
+      gammas[i, j] <- gmults[i]*norm(x=RN%*% sols0$x, type = "F")^2/(2*norm(x=sols0$y, type="1"))
+      
       # Call ADMM solver.
       ADMMres <- penzdaADMM(R=R, N=N, RN=RN, D=D, 
-                            sols0=sols0, gam=gam[i], bta = bta, 
+                            sols0=sols0, gam=gammas[i,j], bta = bta, 
                             tol = tol, maxits = maxits, 
                             type = type, quiet = quiet)
       
-      print(norm(ADMMres$y, type= "F"))
       # Save discriminant vector.
       if (norm(ADMMres$y)>1e-12){ # Normalize if not 0 vector.
-        print('Nonzero solution')
         DVs[,j,i] <- ADMMres$y/norm(x=ADMMres$y, type="F")
       }
       else{print('Converged to zero')}
@@ -677,8 +601,7 @@ penzdaVAL <- function(Xt, Yt, Xval, Yval,
       its[j,i] <- ADMMres$its
       
       # Update null-basis.
-      if (j < (K-1)){
-        print('Updating N')
+      if (j < (k-1)){
         # Extract vector to add to rows of W.
         v <- DVs[,j,i]
         
@@ -701,29 +624,28 @@ penzdaVAL <- function(Xt, Yt, Xval, Yval,
         sig <- SVDres$d[1]
         w <- SVDres$v[,1]
         
-        Nw <- N %*% w
-        
         # Normalize R.
         R <- R/sig
         RN <- RN/sig
         
-        # # Calculate next gamma.
         
-        gam[i, j+1] <- gamscale*norm(x=RN%*%w, type = "F")^2/norm(x=sols0$y, type="1")
       } # end if Nupdate
       
     } # End for j.
     
     # UPDATE VALIDATION SCORES FOR ITH SET OF DISCRIMINANT VECTORS.
-    obji <- list(DVs = DVs[,,i], k=K, classMeans = classMeans)
+    # Form penzda object for validation
+    obji <- list(DVs = DVs[,,i], k=k, classMeans = classMeans)
+    
+    # Call predict fxn
     stts <- predict(obji, Xtest = Xval, Ytest = Yval)
     
-    if (stts$l0 == 0){# Found trivial solution 
-      val_score[i] <- (p+1)*(K-1) 
+    if (stts$l0 == 0){ # Found trivial solution 
+      val_score[i] <- (p+1)*(k-1) 
       triv <- 1 
       break # Found trivial solution.
     } # End triv solution case.
-    else if (stts$l0 > sparsity_level*(K-1)*p){ # Have nontrivial solution, but too dense. 
+    else if (stts$l0 > sparsity_level*(k-1)*p){ # Have nontrivial solution, but too dense. 
       val_score[i] <- stts$l0  
     } # End dense case.
     else{ # Sufficiently sparse. Use misclassification rate as score.
@@ -734,12 +656,153 @@ penzdaVAL <- function(Xt, Yt, Xval, Yval,
     if (val_score[i] < val_score[best_ind]){ # Min score so far.
       best_ind <- i # Update best_ind.
     }
-    
+
   } # End for i.
   
   # OUTPUT.
-  return(list(val_w = DVs[,,best_ind], gamma = gammas[,i],
+  return(list(DVs = DVs[,,best_ind], allDVs = DVs, gam = gammas[i,],
               bestind = best_ind, val_score = val_score,
-              classMeans = classMeans))
+              its = its, classMeans = classMeans, k=k
+              ))
   
 } # END PENZDAVAL.
+
+# NORMALIZE.
+# Centers data set so that column means are equal to 0 and column variance is equal to 1.
+
+normalize <- function(x){
+  # Get number of rows.
+  n <- nrow(x) 
+  
+  # Get column means.
+  mu <- colMeans(x, na.rm = TRUE)
+  
+  # Center x.
+  x <- x - rep(1,n) %*% t(as.matrix(mu))
+  
+  # Calculate column standard deviations.
+  sig <- apply(x, 2, sd)
+  
+  # Scale ith columns of x by ith entry of sigma
+  x <- x %*%  diag(1/sig) 
+  
+  return(list(x=x, mu=mu, sig=sig))
+}
+
+normalizetest <- function(x, mu, sig){
+  # Get number of rows.
+  n <- nrow(x) 
+  
+  # Center x according to mu.
+  x <- x - rep(1,n) %*% t(mu)
+  
+  # Scale ith columns of x by ith entry of sigma
+  x <- x %*%  diag(1/sig) 
+  
+  return(x)
+}
+
+#' PENZDAVAL - PENalized Zero-variance Discriminant Analysis with Validation.
+#'
+#' @param Xt training data set (as matrix)
+#' @param Yt factor containing labels of training data.
+#' @param nfolds number of cross-validation folds.
+#' @param D dictionary matrix.
+#' @param gmults vector of multipliers defining potential regularization parameter values.
+#' @param sparsity_level desired minimum sparsity level for validation scoring.
+#' @param tol stopping tolerance for ADMM scheme.
+#' @param maxits maximum number of iterations performed by ADMM.
+#' @param bta augmented Lagrangian penalty term.
+#' @param quiet true suppresses display of intermediate outputs.
+#' @param type constraint type: "ball" or "sphere".
+#' @return val_w discriminant vectors corresponding to best parameter.
+#' @return DVs set of all discriminant vectors calculated.
+#' @return gamma optimal regularization parameter choice.
+#' @return bestind position of multiplier corresponding to best gamma.
+#' @return valscores array of validation scores.
+#' @return classMeans set of training data class-means.
+#' @export
+
+penzdaCV <- function(Xt, Yt, nfolds = 5, D = diag(p), gmults, 
+                     sparsity_level = 0.25,
+                     tol=1e-3, maxits=1000, bta=3, 
+                     quiet=FALSE, type="ball")
+{
+  # Check for valid type.
+  stopifnot(exprs = {
+    (type=="ball" | type=="sphere")
+  } ) 
+  
+  # Number of observations and features.
+  n <- nrow(Xt)
+  p <- ncol(Xt)
+  
+  # Number of gamma.
+  ngam <- length(gmults)
+  
+  # Matrix of cross-validation scores.
+  cvscores <- matrix(p+1, ngam, nfolds)
+  
+  # PERFORM NFOLDS-CROSS VALIDATION.
+  for (f in 1:nfolds){ # nfolds CV.
+    
+    # Split training data into training/validation sets.
+    if (nfolds == n){ # Leave-one-out CV.
+      Xvt <- Xt[-f,] # Exclude fth observation from training.
+      Yvt <- Yt[-f] 
+      Xval <- Xt[f,] # Use fth observation for validation.
+      Yval <- Yt[f]
+    }
+    else if (nfolds > n){ # more folds than training observations.
+      error('# of folds cannot exceed number of training observations.')
+    }
+    else{ # Use 1/nfolds fraction of training for validation, reset for training.
+      # Sample validation indices.
+      nval <- ceil(n*1/nfolds)
+      valinds <-  sample.int(n, size = nval, replace = FALSE)
+      
+      # Training/testing split.
+      Xval <- Xtrain[valinds, ]
+      Yval <- Ytrain[valinds]
+      Xvt <- Xtrain[-valinds, ]
+      Yvt <- Ytrain[-valinds]
+    } # END IF: training/val split.
+    
+    # Normalize training data.
+    trainlist <- normalize(x = Xvt)
+    Xvt <- trainlist$x
+    mu <- trainlist$mu
+    sig <- trainlist$sig
+    
+    # Center/scale validation data.
+    Xval <- normalizetest(x=Xval, mu = mu, sig = sig)
+    
+    # Call penzdaVal to calculate validation scores and discriminant vectors for each gamma.
+    fres <- penzdaVAL(Xt = Xvt, Yt = Yvt, Xval = Xval, Yval = Yval, gmults = gmults,
+                      sparsity_level = sparsity_level, tol = tol, maxits = maxits,
+                      bta = beta, quiet = quiet, type = type)
+    
+    # Update cvscores.
+    cvscores[,f] <- fres$val_score
+      
+  } # END FOR F.
+  
+  # DETERMINE BEST PARAMETERS AND SOLVE FOR OPTIMAL DISCRIMINANT VECTORS.
+  
+  # Calculate average validation scores across folds.
+  meanscores = rowMeans(cvscores)
+  
+  # Optimal choice of gamma multiplier.
+  gam <- gmults(best_ind) 
+  
+  bestres <- penzda(Xt = Xt, Yt = Yt, D=D, tol = tol, maxits = maxits,
+                    bta = bta, quiet = quiet, type=type, 
+                    gamscale = gmults(bestind))
+  
+  # OUTPUT.
+  return(list(DVs = bestres$DVs, allDVs = DVs, gam = gammas[i,],
+              bestind = best_ind, cvscores = cvscores,
+              its = its, classMeans = classMeans, k=k
+  ))
+    
+}

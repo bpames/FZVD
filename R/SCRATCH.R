@@ -37,18 +37,44 @@ cmns <- penzda(Xt = Xtrain, Yt = Ytrain, maxits=50, tol = 1e-3, type ="ball")
 cmns$DVs
 plot(cmns$DVs[,1], type="l")
 
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# TEST VALIDATION SCHEME.
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+# Split data.
+set.seed(2)
+nval <- round(0.2*n)
+valinds <-  sample.int(n, size = nval, replace = FALSE)
 
-res <- penzdaVAL(Xt = Xtrain, Yt = Ytrain, )
+Xval <- Xtrain[valinds, ]
+Yval <- Ytrain[valinds]
+Xvt <- Xtrain[-valinds, ]
+Yvt <- Ytrain[-valinds]
 
-penstats <- predict(obj = cmns, Xtest = Xtest, Ytest = Ytest)
+# Need to renormalize training and validation data.
+trainlist <- normalize(x = Xvt)
+Xvt <- trainlist$x
+mu <- trainlist$mu
+sig <- trainlist$sig
+
+Xval <- normalizetest(x=Xval, mu = mu, sig = sig)
+
+res <- penzdaVAL(Xt = Xvt, Yt = Yvt, Xval = Xval, Yval=Yval, maxits = 500,
+                 gmults = c(0.25, 0.5, 0.75, 1),sparsity_level = 0.4,
+                 quiet = FALSE,type = "sphere")
+                    
+
+plot(res$DVs, type="l")
+res$val_score
+
+penstats <- predict(obj = res, Xtest = Xtest, Ytest = Ytest)
 penstats$mc
 cbind(penstats$preds, Ytest, penstats$dist)
 
-v  <- c(1, 2, -4)
-a <- 1.5
-
-s <- vecshrink(v,a)
+# v  <- c(1, 2, -4)
+# a <- 1.5
+# 
+# s <- vecshrink(v,a)
 
 #++++++++++++++++++++++++++++++++
 x <- cmns$sols$x
@@ -59,16 +85,16 @@ D <- diag(p)
 
 
 
-r <- rbind(c(1,2,3),
-           c(0,2,1),
-           c(0,0,2))
+# r <- rbind(c(1,2,3),
+#            c(0,2,1),
+#            c(0,0,2))
+# 
+# prds <- max.col(r)
+# r
 
-prds <- max.col(r)
-r
-
-y <- backsolve(r, x <- c(8,4,2)) 
-
-r %*% y
-
-backsolve(r, x, transpose = TRUE)
+# y <- backsolve(r, x <- c(8,4,2)) 
+# 
+# r %*% y
+# 
+# backsolve(r, x, transpose = TRUE)
 

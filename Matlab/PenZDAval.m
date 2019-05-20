@@ -21,7 +21,7 @@ function [val_w, DVs, gamma, best_ind, val_score, classMeans] = PenZDAval(train,
 
 % Initialize classMeans of training data and get number of classes.
 % classes=train(:,1);
-[n,p]=size(train);
+[~,p]=size(train);
 p = p-1;
 % X=train(:,2:p);
 % %X=normalize(X);
@@ -163,13 +163,14 @@ for i=1:num_gammas
 %             fprintf('update N\n')
             N=Nupdate1(N,x);
             RN = R*N;
+            Nw = N*w;
             [~,sigma,w]=svds(RN, 1, 'largest');
             R=R/sigma;
             % Set gamma.
 %             size(RN)
 %             size(N)
 %             size(w)
-            gammas(i,j+1)=gmults(i)*norm(RN*w,2)^2/norm(Dx(N*w),1);
+            gammas(i,j+1)=gmults(i)*norm(RN*w,2)^2/norm(Dx(Nw),1);
         end
     end
     %Get performance scores on the validation set

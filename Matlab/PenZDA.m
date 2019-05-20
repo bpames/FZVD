@@ -67,7 +67,7 @@ end
 
 % Set gamma.
 sols0.y = Dx(Nw);
-gamma(1)=gamscale*norm(RN*w,2)^2/norm(sols0.y,1);
+gamma(1)=gamscale*norm(RN*w,2)^2/(2*norm(sols0.y,1));
 
 %Initialization for the output
 DVs=zeros(p,K-1);
@@ -139,7 +139,7 @@ for i=1:(K-1)
         R=R/sigma;
         % Set gamma.
         Nw = N*w;
-        gamma(i+1)=gamscale*norm(RN*w,2)^2/norm(Dx(Nw),1);
+        gamma(i+1)=gamscale*norm(RN*w,2)^2/(2*norm(Dx(Nw),1));
     end
     
 end

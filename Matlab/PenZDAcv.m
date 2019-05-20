@@ -33,7 +33,7 @@ ngam = length(gmults);
 cv_scores = (p+1)*ones(ngam, nfolds);
 
 % Set training ratio. (Ignored if nfolds = n for LOO).)
-tratio = 1- 1/nfolds
+tratio = 1- 1/nfolds;
 
 %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 % CV scheme.
@@ -41,7 +41,7 @@ tratio = 1- 1/nfolds
 
 if (quiet == false)
     fprintf('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n')
-    fprintf('Leave-One-Out CV\n')
+    fprintf('Cross-Validation\n')
 end
 
 for f = 1:nfolds
