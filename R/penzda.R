@@ -356,9 +356,10 @@ predict <- function(obj, Xtest, Ytest){
   
   # Label test_obs accoring to the closest centroid to its projection
   preds <- max.col(-dist)
+  preds <- factor(x = preds, levels = levels(Ytest))
   
   # Calculate misclassification rate.
-  mcrate <- sum(Ytest!=as.factor(preds))/n
+  mcrate <- sum(Ytest!= preds)/n
 
   # Count number of nonzero entries.
   l0 <- sum(colSums(obj$DVs != matrix(0, nrow = nrow(as.matrix(obj$DVs)), 
@@ -758,7 +759,7 @@ penzdaCV <- function(Xt, Yt, nfolds = 5, D = diag(p), gmults,
     }
     else{ # Use 1/nfolds fraction of training for validation, reset for training.
       # Sample validation indices.
-      nval <- ceil(n*1/nfolds)
+      nval <- ceiling(n*1/nfolds)
       valinds <-  sample.int(n, size = nval, replace = FALSE)
       
       # Training/testing split.
@@ -780,29 +781,32 @@ penzdaCV <- function(Xt, Yt, nfolds = 5, D = diag(p), gmults,
     # Call penzdaVal to calculate validation scores and discriminant vectors for each gamma.
     fres <- penzdaVAL(Xt = Xvt, Yt = Yvt, Xval = Xval, Yval = Yval, gmults = gmults,
                       sparsity_level = sparsity_level, tol = tol, maxits = maxits,
-                      bta = beta, quiet = quiet, type = type)
+                      bta = bta, quiet = quiet, type = type)
     
     # Update cvscores.
     cvscores[,f] <- fres$val_score
+    
+    print(sprintf('Fold = %g', f))
+    print(cvscores[,f])
       
   } # END FOR F.
+  
+  
   
   # DETERMINE BEST PARAMETERS AND SOLVE FOR OPTIMAL DISCRIMINANT VECTORS.
   
   # Calculate average validation scores across folds.
-  meanscores = rowMeans(cvscores)
+  best_ind <- which.min( rowMeans(cvscores) )
   
-  # Optimal choice of gamma multiplier.
-  gam <- gmults(best_ind) 
-  
+  # Calculate discriminant vectors with optimized choice of penalty.
   bestres <- penzda(Xt = Xt, Yt = Yt, D=D, tol = tol, maxits = maxits,
                     bta = bta, quiet = quiet, type=type, 
-                    gamscale = gmults(bestind))
+                    gamscale = gmults[best_ind])
   
   # OUTPUT.
-  return(list(DVs = bestres$DVs, allDVs = DVs, gam = gammas[i,],
+  return(list(DVs = bestres$DVs,
               bestind = best_ind, cvscores = cvscores,
-              its = its, classMeans = classMeans, k=k
+              classMeans = bestres$classMeans, k=bestres$k
   ))
     
 }

@@ -37,6 +37,7 @@ cmns <- penzda(Xt = Xtrain, Yt = Ytrain, maxits=50, tol = 1e-3, type ="ball")
 cmns$DVs
 plot(cmns$DVs[,1], type="l")
 
+
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # TEST VALIDATION SCHEME.
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -69,6 +70,24 @@ res$val_score
 
 penstats <- predict(obj = res, Xtest = Xtest, Ytest = Ytest)
 penstats$mc
+
+# TEST VALIDATION SCHEME.
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+cvres <- penzdaCV(Xt = Xtrain, Yt = Ytrain, nfolds = 5, maxits = 500,
+                 gmults = c(0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2,5),sparsity_level = 0.4,
+                 quiet = FALSE,type = "sphere")
+
+plot(cvres$DVs, type="l")
+cvres$cvscores
+
+rowMeans(cvres$cvscores)
+
+penstats <- predict(obj = cvres, Xtest = Xtest, Ytest = Ytest)
+
+penstats$mc
+penstats$l0/136
+
 cbind(penstats$preds, Ytest, penstats$dist)
 
 # v  <- c(1, 2, -4)
