@@ -74,9 +74,10 @@ penstats$mc
 # TEST VALIDATION SCHEME.
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-cvres <- penzdaCV(Xt = Xtrain, Yt = Ytrain, nfolds = 5, maxits = 500,
-                 gmults = c(0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2,5),sparsity_level = 0.4,
-                 quiet = FALSE,type = "sphere")
+cvres <- penzdaCV(Xt = Xtrain, Yt = Ytrain, nfolds = nrow(Xtrain), maxits = 1500,
+                 gmults = c(0.25, 0.5, 0.75, 1, 1.25, 1.3, 1.4, 1.5, 1.75, 2,5),sparsity_level = 0.4,
+                 bta = 2.5,
+                 quiet = FALSE,type = "ball")
 
 plot(cvres$DVs, type="l")
 cvres$cvscores
