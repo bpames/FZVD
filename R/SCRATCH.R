@@ -30,7 +30,7 @@ plot(res$beta, type = 'l')
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Test penzda.
-library(MASS)
+#library(MASS)
 library(rARPACK)
 
 cmns <- penzda(Xt = Xtrain, Yt = Ytrain, maxits=50, tol = 1e-3, type ="ball")
@@ -65,19 +65,19 @@ res <- penzdaVAL(Xt = Xvt, Yt = Yvt, Xval = Xval, Yval=Yval, maxits = 500,
                  quiet = FALSE,type = "sphere")
                     
 
-plot(res$DVs, type="l")
+plot(res$DVs[,2], type="l")
 res$val_score
 
 penstats <- predict(obj = res, Xtest = Xtest, Ytest = Ytest)
 penstats$mc
 
-# TEST VALIDATION SCHEME.
+# CROSS-VALIDATION SCHEME.
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-cvres <- penzdaCV(Xt = Xtrain, Yt = Ytrain, nfolds = nrow(Xtrain), maxits = 1500,
+cvres <- penzdaCV(Xt = Xtrain, Yt = Ytrain, nfolds = nrow(Xtrain), maxits = 500,
                  gmults = c(0.25, 0.5, 0.75, 1, 1.25, 1.3, 1.4, 1.5, 1.75, 2,5),sparsity_level = 0.4,
-                 bta = 2.5,
-                 quiet = FALSE,type = "ball")
+                 bta = 3,
+                 quiet = FALSE,type = "sphere")
 
 plot(cvres$DVs, type="l")
 cvres$cvscores

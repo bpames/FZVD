@@ -40,7 +40,7 @@ penzda <- function(Xt, Yt, D = diag(p), tol=1e-3, maxits=1000, bta=3, quiet=FALS
   }
   else{ 
     # Use Lanczos method to find dominant singular value/right vector.
-    SVDres <- svds(A = RN, k =1, nu = 0, nv =1)
+    SVDres <- rARPACK::svds(A = RN, k =1, nu = 0, nv =1)
   }
   
   # Extract singular value/vector.
@@ -122,7 +122,7 @@ penzda <- function(Xt, Yt, D = diag(p), tol=1e-3, maxits=1000, bta=3, quiet=FALS
       }
       else{ 
         # Use Lanczos method to find dominant singular value/right vector.
-        SVDres <- svds(A = RN, k =1, nu = 0, nv =1)
+        SVDres <- rARPACK::svds(A = RN, k =1, nu = 0, nv =1)
       }
       
       # Extract singular value/vector.
@@ -371,7 +371,7 @@ predict <- function(obj, Xtest, Ytest){
 }
 
 
-#' Nupdate1 - Updates null basis using single Householder reflection.
+#' Nupdate - Updates null basis using single Householder reflection.
 #'
 #' @param N matrix whose columns are orthonormal basis for null space of within-class covariance matrix W.
 #' @param v new vector
@@ -513,7 +513,7 @@ penzdaVAL <- function(Xt, Yt, Xval, Yval,
   }
   else{ 
     # Use Lanczos method to find dominant singular value/right vector.
-    SVDres <- svds(A = RN, k =1, nu = 0, nv =1)
+    SVDres <- rARPACK::svds(A = RN, k =1, nu = 0, nv =1)
   }
   
   # Extract singular value/vector.
@@ -618,7 +618,7 @@ penzdaVAL <- function(Xt, Yt, Xval, Yval,
         }
         else{ 
           # Use Lanczos method to find dominant singular value/right vector.
-          SVDres <- svds(A = RN, k =1, nu = 0, nv =1)
+          SVDres <- rARPACK::svds(A = RN, k =1, nu = 0, nv =1)
         }
         
         # Extract singular value/vector.
@@ -717,7 +717,7 @@ normalizetest <- function(x, mu, sig){
   return(x)
 }
 
-#' PENZDAVAL - PENalized Zero-variance Discriminant Analysis with Validation.
+#' PENZDACV - PENalized Zero-variance Discriminant Analysis with Cross-Validation.
 #'
 #' @param Xt training data set (as matrix)
 #' @param Yt factor containing labels of training data.
