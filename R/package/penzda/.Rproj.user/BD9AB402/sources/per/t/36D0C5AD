@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1558381292152.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3577278697",
+    "id" : "36D0C5AD",
+    "lastKnownWriteTime" : 1558381406,
+    "last_content_update" : 1558381406826,
+    "path" : "C:/Users/bpames/github/FZVD/R/package/penzda/R/penzda.R",
+    "project_path" : "R/penzda.R",
+    "properties" : {
+        "cursorPosition" : "112,21",
+        "scrollLine" : "99",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

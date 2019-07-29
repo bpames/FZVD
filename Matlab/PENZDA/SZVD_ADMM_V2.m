@@ -1,7 +1,7 @@
-function [x,y,z,its, errtol] = SZVD_ADMM_S(R, N, RN, D, sols0,gamma, beta, tol, maxits, quiet)
+function [x,y,z,its, errtol] = SZVD_ADMM_V2(R, N, RN, D, sols0,gamma, beta, tol, maxits, quiet)
 
 % Iteratively solves the problem
-%       min{-1/2*x'B'x + gamma p(y): l2(y) = 1, DNx = y}
+%       min{-1/2*x'B'x + gamma p(y): l2(x) <= 1, DNx = y}
 % using ADMM.
 %====================================================================
 % Input.
@@ -34,6 +34,7 @@ function [x,y,z,its, errtol] = SZVD_ADMM_S(R, N, RN, D, sols0,gamma, beta, tol, 
 p = size(D, 1);
 
 % Define d operators.
+% Define d operators.
 if isdiag(D)
     % Check if D = I
     d = diag(D); 
@@ -63,7 +64,7 @@ x = sols0.x;
  % Take Cholesky of beta I - B (for use in update of x)
 %V=chol(eye(K)-1/beta*R*(N*N')*R','upper');
 %[V1,V2] = qr(eye(K)-1/beta*R*(N*N')*R');
-[P,L] = lu(eye(K)-1/beta*(RN*RN'));
+[P,L] = lu(eye(K)-1/beta*RN*RN');
 
 
 %====================================================================
@@ -89,24 +90,16 @@ for iter=1:maxits
     % Save previous iterate.
     yold = y;
     
+    % Call soft-thresholding.  
+    y = vec_shrink(beta*Dx(N*x) + z, gamma);
     
-    % Calculate largest magnitude entry of b.
-    b = Dx(N*x) + z;
-    [mx, ix] = max(abs(b));
     
-    % Update y. 
-    if mx <= gamma  % all-zeros is optimal for ball-constrained problem.
-        % Set yix to be indicator for largest value.
-        y = zeros(p,1);
-        y(ix) = sign(b(ix));
-    else % all-zeros is suboptimal. Use soft-threshholding.
-        y = vec_shrink(b, gamma);
-        y = y/norm(y); % Normalize y (if necessary).
-    end
+    % Normalize y (if necessary).
+    tmp = max(0, norm(y) - beta);
+    y = y/(beta + tmp);
     
     % Truncate complex part (if have +0i terms appearing.)
     y = real(y);
-    
     %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     % Step 2: Update x_k+1 by solving
     % x_k+1 = argmin { -x'*A*x + beta/2 l2(x - y_k+1 + z_k)^2}
@@ -129,10 +122,11 @@ for iter=1:maxits
     % (according to the formula z_k+1 = z_k + beta*(N*x_k+1 - y_k+1) ).
     %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     %zold = z;
-    % Primal residual.
-    r = Dx(N*x) - y;    
     
-    % Update z.
+    % Primal residual.
+    r = Dx(N*x) - y;  
+    
+    % Ascent step.
     z = real(z + beta*r);
     
     %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -142,7 +136,7 @@ for iter=1:maxits
     %----------------------------------------------------------------
     % Primal constraint violation.
     %----------------------------------------------------------------
-    
+      
     % l2 norm of the residual.
     dr = norm(r);
 	
